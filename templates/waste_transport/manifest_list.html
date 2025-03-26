@@ -143,7 +143,7 @@
                         
                         <!-- 分頁 -->
                         {% if page_obj.has_other_pages %}
-                        <div class="ts-pagination is-center-aligned has-top-spaced-large">
+                        <div class="ts-pagination is-center-aligned has-top-spaced-large" >
                             {% if page_obj.has_previous %}
                                 <a class="item" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
                                     <span class="ts-icon is-angles-left-icon"></span>
@@ -153,7 +153,7 @@
                                 </a>
                             {% endif %}
 
-                            <span class="item">第 {{ page_obj.number }} 頁，共 {{ page_obj.paginator.num_pages }} 頁</span>
+                            <span class="item" >第 {{ page_obj.number }} 頁，共 {{ page_obj.paginator.num_pages }} 頁</span>
 
                             {% if page_obj.has_next %}
                                 <a class="item" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">

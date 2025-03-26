@@ -75,10 +75,10 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .manifest-card.is-active .ts-text{
-    color: var(--gray-100);
+    color: var(--black);
 }
 .manifest-card.is-active .ts-header{
-    color: var(--gray-100);
+    color: var(--black);
 }
 
 /* 詳細視圖標籤樣式增強 */
@@ -916,7 +916,9 @@
     display: flex;
     align-items: center;
 }
-
+#applyToAll{
+    padding-top: 1px;
+}
 /* 整體確保元素對齊 */
 .conflict-resolution-container .ts-grid .column {
     height: 40px;

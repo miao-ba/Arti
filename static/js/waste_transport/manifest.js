@@ -66,7 +66,7 @@ function initFilterToggle() {
             filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-icon"></span> 篩選';
         } else {
             filterForm.style.display = 'block';
-            filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-slash-icon"></span> 篩選';
+            filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-icon"></span> 篩選';
         }
     });
 }
@@ -883,12 +883,9 @@ function showConflictDialog(rows, importType, currentIndex, newData, existingDat
     const conflictHtml = `
         <div class="ts-box has-top-spaced conflict-record">
             <div class="ts-content">
-                <div class="ts-header is-heavy">
-                    衝突記錄 ${currentIndex + 1}/${rows.length}
-                </div>
-                
+                <div class="ts-header is-heavy has-bottom-spaced">
                 <div class="ts-text">聯單編號: ${newData['聯單編號']} (廢棄物ID: ${newData['廢棄物ID']})</div>
-                <div class="ts-text has-bottom-spaced-small">事業機構名稱: ${newData['事業機構名稱'] || existingData['事業機構名稱'] || '-'}</div>
+                </div>
                 
                 <div class="ts-grid is-relaxed has-top-spaced" style=" display: none;">
                     <div class="column is-3-wide">
