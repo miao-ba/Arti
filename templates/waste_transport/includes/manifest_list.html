@@ -1,0 +1,55 @@
+{% if manifests %}
+    <div class="ts-list is-relaxed">
+        {% for item in manifests %}
+            <div class="item manifest-item" 
+                 data-manifest-id="{{ item.manifest_id }}" 
+                 data-waste-id="{{ item.waste_id }}"
+                 data-manifest-type="{{ item.type }}">
+                <div class="ts-content">
+                    <div class="ts-grid">
+                        <div class="column is-fluid">
+                            <div class="ts-header">
+                                {{ item.company_name }}
+                                <div class="sub header monospace">{{ item.manifest_id }}</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="ts-badge is-{{ item.type }}">{{ item.type_display }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ts-grid is-relaxed has-top-spaced-small">
+                        <div class="column is-12-wide">
+                            <div class="ts-text is-description">申報日期：{{ item.report_date|date:"Y-m-d" }}</div>
+                            <div class="ts-text is-description">
+                                {% if item.type == 'disposal' %}
+                                    廢棄物：{{ item.waste_name }} ({{ item.waste_code }})
+                                {% else %}
+                                    物質：{{ item.waste_name }} ({{ item.waste_code }})
+                                {% endif %}
+                            </div>
+                            <div class="ts-text is-description">
+                                申報重量：{{ item.reported_weight }} kg
+                                <span class="is-float-right">
+                                    確認狀態：
+                                    {% if item.manifest_confirmation %}
+                                    <span class="ts-icon is-check-icon status-confirmed"></span>
+                                    {% else %}
+                                    <span class="ts-icon is-xmark-icon status-pending"></span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="ts-notice is-info has-top-spaced">
+        <div class="content">
+            <div class="header">無資料</div>
+            <div class="description">目前沒有符合條件的聯單，請調整篩選條件或匯入資料。</div>
+        </div>
+    </div>
+{% endif %}

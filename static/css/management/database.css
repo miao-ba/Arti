@@ -1,0 +1,44 @@
+.ts-grid.is-relaxed {
+    margin-bottom: 1rem;
+}
+
+.ts-dropdown .menu {
+    position: absolute;
+    background: #333;
+    padding: 1rem;
+    width: 200px;
+    right: 0;
+}
+
+/* Fixed width columns */
+.checkbox-column, .checkbox-cell {
+    width: 5% !important;
+}
+.date-column, .date-cell {
+    max-width: 10em;
+    width: 10% !important;
+}
+.action-column, .action-cell {
+    width: 15% !important;
+}
+
+/* Dynamic data columns share 75% width */
+.data-column, .data-cell {
+    width: calc(50% / var(--field-count, 1)) !important; /* Dynamic width based on field count */
+}
+
+/* Ensure inputs fit within cells */
+.ts-input.is-basic {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Override checkbox theme */
+.ts-checkbox input[type="checkbox"]:not(:checked) {
+    background-color: white;
+    border: 2px solid var(--ts-gray-400) !important;
+}
+
+.ts-checkbox input[type="checkbox"]:not(:checked):disabled {
+    background-color: var(--ts-gray-300) !important;
+}

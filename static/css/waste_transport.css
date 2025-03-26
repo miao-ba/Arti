@@ -1,0 +1,599 @@
+/* 醫療廢棄物暨資源管理系統 - 聯單管理模組樣式 */
+
+:root {
+    --primary-color: #3498db;
+    --primary-dark: #2980b9;
+    --primary-light: #ebf5fb;
+    --secondary-color: #2ecc71;
+    --secondary-dark: #27ae60;
+    --secondary-light: #eafaf1;
+    --warning-color: #f39c12;
+    --warning-dark: #e67e22;
+    --warning-light: #fef5e7;
+    --danger-color: #e74c3c;
+    --danger-dark: #c0392b;
+    --danger-light: #fdedec;
+    --info-color: #3498db;
+    --info-dark: #2980b9;
+    --info-light: #ebf5fb;
+    --success-color: #2ecc71;
+    --success-dark: #27ae60;
+    --success-light: #eafaf1;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+    --white: #ffffff;
+    --black: #000000;
+}
+
+/* 聯單類型標籤顏色 */
+.ts-badge.is-disposal {
+    background-color: var(--warning-color);
+    color: var(--black);
+}
+
+.ts-badge.is-reuse {
+    background-color: var(--info-color);
+    color: var(--white);
+}
+
+/* 狀態指示器 */
+.status-confirmed {
+    color: var(--success-color);
+}
+
+.status-pending {
+    color: var(--warning-color);
+}
+
+.status-rejected {
+    color: var(--danger-color);
+}
+
+/* 聯單卡片樣式 */
+.manifest-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 12px !important;
+}
+
+.manifest-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.manifest-card.is-active {
+    border-left-width: 6px !important;
+    background-color: var(--warning-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.manifest-card.is-active .ts-text{
+    color: var(--gray-100);
+}
+.manifest-card.is-active .ts-header{
+    color: var(--gray-100);
+}
+
+/* 詳細視圖標籤樣式增強 */
+#detail-tabs .item {
+    position: relative;
+    transition: all 0.3s ease;
+    padding: 12px 16px;
+    background-color: var(--gray-200);
+    border-radius: 5px 5px 0 0;
+    color: var(--gray-700);
+}
+
+#detail-tabs .item.is-active {
+    font-weight: 600;
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+#detail-tabs .item.is-active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: var(--primary-color);
+}
+
+#detail-tabs .item:hover {
+    background-color: var(--gray-100);
+}
+
+#detail-tabs {
+    margin: 15px 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* 區塊標題樣式 */
+.section-header {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* 聯單 ID 樣式 */
+.manifest-id {
+    font-family: monospace;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* CSV 格式幫助區塊 */
+.csv-format-help {
+    max-height: 150px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.85rem;
+    background-color: var(--gray-100);
+    padding: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-800);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.csv-format-help code {
+    background-color: transparent;
+    padding: 0;
+    color: var(--gray-800);
+    font-weight: 500;
+}
+
+.csv-format-help-improved {
+    background-color: var(--gray-100);
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--gray-300);
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.csv-format-help-improved code {
+    color: var(--gray-800);
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 匯入歷史項目樣式 */
+.import-history-item {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 0.75rem;
+}
+
+.import-history-item.is-disposal {
+    border-left-color: var(--warning-color);
+}
+
+.import-history-item.is-reuse {
+    border-left-color: var(--info-color);
+}
+
+/* 統計數字樣式 */
+.ts-statistic .value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.ts-statistic .label {
+    font-size: 1rem;
+    color: var(--gray-600);
+}
+
+/* 衝突比較表格 */
+.conflict-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.conflict-table th,
+.conflict-table td {
+    border: 1px solid var(--gray-300);
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.conflict-table th {
+    background-color: var(--gray-100);
+    text-align: left;
+    color: var(--gray-800);
+}
+
+.conflict-table .different-value {
+    background-color: var(--warning-light);
+    font-weight: 600;
+}
+
+/* 通知彈出樣式 */
+#notification-snackbar {
+    visibility: hidden;
+    position: fixed;
+    z-index: 9999;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 300px;
+    background-color: var(--gray-800);
+    color: var(--white);
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+#notification-snackbar.show {
+    visibility: visible;
+    animation: snackbar-fadein 0.5s, snackbar-fadeout 0.5s 3s;
+}
+
+@keyframes snackbar-fadein {
+    from {
+        bottom: 0;
+        opacity: 0;
+    }
+    to {
+        bottom: 30px;
+        opacity: 1;
+    }
+}
+
+@keyframes snackbar-fadeout {
+    from {
+        bottom: 30px;
+        opacity: 1;
+    }
+    to {
+        bottom: 0;
+        opacity: 0;
+    }
+}
+
+/* 空數據狀態樣式 */
+.ts-empty {
+    padding: 3rem 0;
+}
+
+.ts-empty .ts-icon {
+    font-size: 3rem;
+    color: var(--gray-400);
+    margin-bottom: 1rem;
+}
+
+.ts-empty .header {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.ts-empty .description {
+    color: var(--gray-500);
+}
+
+/* Windows風格對話框樣式 */
+.windows-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.windows-modal-window {
+    background-color: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    max-width: 90%;
+    width: 800px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.windows-modal-titlebar {
+    background: var(--primary-color);
+    color: var(--white);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+}
+
+.windows-modal-title {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.windows-modal-controls {
+    display: flex;
+}
+
+.windows-modal-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 30px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.windows-modal-close:hover {
+    background-color: var(--danger-color);
+}
+
+.windows-modal-content {
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(80vh - 40px);
+    background-color: var(--white);
+    color: var(--gray-800);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* 按鈕樣式 */
+.windows-style-btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--gray-300);
+    background-color: var(--white);
+    color: var(--gray-800);
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+.windows-style-btn:hover {
+    background-color: var(--gray-100);
+    border-color: var(--gray-400);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 自動完成元件樣式 */
+.autocomplete-input {
+    padding-right: 30px !important;
+}
+
+.autocomplete-icon {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--gray-500);
+}
+
+.autocomplete-dropdown {
+    border-radius: 4px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    background-color: var(--white);
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--gray-300);
+}
+
+.autocomplete-search {
+    position: sticky;
+    top: 0;
+    background-color: var(--white);
+    padding: 10px;
+    border-bottom: 1px solid var(--gray-200);
+    z-index: 1;
+}
+
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-800);
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item.is-hover,
+.autocomplete-item:hover {
+    background-color: var(--primary-light);
+}
+
+.autocomplete-no-result,
+.autocomplete-error {
+    padding: 12px;
+    text-align: center;
+    color: var(--gray-600);
+}
+
+.autocomplete-error {
+    color: var(--danger-color);
+}
+
+/* 固定高度的容器 */
+#manifest-list-container, #manifest-detail-container {
+    height: 700px;
+}
+
+#manifest-cards {
+    height: 520px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+#manifest-detail {
+    height: 520px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* 篩選區塊樣式 */
+#filter-form {
+    background-color: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+}
+
+#filter-form .ts-text.is-label {
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+#filter-form .ts-input,
+#filter-form .ts-select {
+    background-color: var(--white);
+    border: 1px solid var(--gray-300);
+    color: var(--gray-800);
+}
+
+#filter-form .ts-input:focus,
+#filter-form .ts-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+/* 下拉選單統一樣式 */
+.ts-select {
+    background-color: var(--white);
+    border: 1px solid var(--gray-300);
+    color: var(--gray-800);
+}
+
+.ts-select select {
+    color: var(--gray-800);
+    background-color: var(--white);
+}
+
+.ts-select select:focus {
+    border-color: var(--primary-color);
+}
+
+/* 衝突解析樣式 */
+.conflict-resolution-container {
+    padding: 15px;
+    background-color: var(--gray-100);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    border: 1px solid var(--gray-300);
+}
+
+.conflict-resolution-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 10px;
+}
+
+.conflict-resolution-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.conflict-resolution-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.conflict-resolution-option label {
+    cursor: pointer;
+    color: var(--gray-800);
+}
+
+.conflict-resolution-description {
+    color: var(--gray-600);
+    font-size: 13px;
+    margin-left: 24px;
+}
+
+.apply-to-all-checkbox {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--gray-300);
+}
+.ts-container{
+    max-width: 90%;
+}
+
+/* 反應式調整 */
+@media screen and (max-width: 768px) {
+    .ts-grid .column.is-6-wide {
+        width: 100%;
+    }
+    
+    .ts-statistic .value {
+        font-size: 2rem;
+    }
+    
+    #filter-form {
+        font-size: 0.9rem;
+    }
+    
+    .manifest-detail-container {
+        margin-top: 2rem;
+    }
+    
+    .ts-modal .content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    #manifest-list-container,
+    #manifest-detail-container {
+        height: auto;
+        width: 100%;
+    }
+    
+    #manifest-cards,
+    #manifest-detail {
+        height: 400px;
+    }
+}
+
+/* 列印時樣式調整 */
+@media print {
+    .ts-app-topbar,
+    .ts-app-center,
+    .ts-box,
+    button,
+    .ts-pagination,
+    #manifest-list-container {
+        display: none !important;
+    }
+    
+    #manifest-detail-container {
+        width: 100% !important;
+    }
+    
+    .ts-content,
+    .ts-header,
+    .ts-text,
+    table {
+        color: black !important;
+    }
+}

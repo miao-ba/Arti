@@ -1,0 +1,287 @@
+<!-- 清除單詳細資訊 -->
+<div class="manifest-detail-container">
+    <div class="ts-content">
+        <div class="ts-header is-large">
+            <div class="ts-badge is-large is-disposal has-end-spaced-small">清除單</div>
+            {{ manifest.company_name }}
+        </div>
+        <div class="ts-text monospace is-big has-top-spaced-small">
+            聯單編號: {{ manifest.manifest_id }}
+        </div>
+        
+        <div class="ts-tabs has-top-spaced-large" id="detail-tabs">
+            <a class="item is-active" data-tab-detail="0">基本資訊</a>
+            <a class="item" data-tab-detail="1">清除者資訊</a>
+            <a class="item" data-tab-detail="2">處理者資訊</a>
+            <a class="item" data-tab-detail="3">廢棄物資訊</a>
+        </div>
+        
+        <!-- 基本資訊 -->
+        <div class="ts-segment" data-detail-name="0">
+            <div class="ts-grid is-relaxed">
+                <div class="column is-8-wide">
+                    <div class="section-header">
+                        <div class="ts-header is-heading is-heavy">基本資訊</div>
+                    </div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">聯單編號</td>
+                                <td><span class="monospace manifest-id">{{ manifest.manifest_id }}</span></td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">事業機構代碼</td>
+                                <td>{{ manifest.company_id }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">事業機構名稱</td>
+                                <td>{{ manifest.company_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">申報日期時間</td>
+                                <td>{{ manifest.report_date|date:"Y-m-d" }} {{ manifest.report_time|time:"H:i:s" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">清運日期時間</td>
+                                <td>
+                                    {% if manifest.transport_date %}
+                                        {{ manifest.transport_date|date:"Y-m-d" }} {{ manifest.transport_time|time:"H:i:s" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">聯單確認</td>
+                                <td>
+                                    {% if manifest.manifest_confirmation %}
+                                        <span class="ts-icon is-check-icon status-confirmed"></span> 已確認
+                                    {% else %}
+                                        <span class="ts-icon is-xmark-icon status-pending"></span> 未確認
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="column is-8-wide">
+                    <div class="section-header">
+                        <div class="ts-header is-heading is-heavy">貯存與運輸資訊</div>
+                    </div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">是否由貯存地起運</td>
+                                <td>
+                                    {% if manifest.from_storage %}
+                                        <span class="ts-icon is-check-icon status-confirmed"></span> 是
+                                    {% else %}
+                                        <span class="ts-icon is-xmark-icon status-pending"></span> 否
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">起運地</td>
+                                <td>{{ manifest.origin_location|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">運載車號</td>
+                                <td>{{ manifest.carrier_vehicle|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">製程代碼</td>
+                                <td>{{ manifest.process_code }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">製程名稱</td>
+                                <td>{{ manifest.process_name }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 清除者資訊 -->
+        <div class="ts-segment" data-detail-name="1" style="display: none;">
+            <div class="section-header">
+                <div class="ts-header is-heading is-heavy">清除者資訊</div>
+            </div>
+            <table class="ts-table is-basic is-celled">
+                <tbody>
+                    <tr>
+                        <td class="is-secondary" width="180">清除者代碼</td>
+                        <td>{{ manifest.carrier_id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">清除者名稱</td>
+                        <td>{{ manifest.carrier_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">運送日期時間</td>
+                        <td>
+                            {% if manifest.delivery_date %}
+                                {{ manifest.delivery_date|date:"Y-m-d" }} {{ manifest.delivery_time|time:"H:i:s" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">清除者運載車號</td>
+                        <td>{{ manifest.carrier_vehicle_number|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">清除者確認</td>
+                        <td>
+                            {% if manifest.carrier_confirmation %}
+                                <span class="ts-icon is-check-icon status-confirmed"></span> 已確認
+                            {% else %}
+                                <span class="ts-icon is-xmark-icon status-pending"></span> 未確認
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 處理者資訊 -->
+        <div class="ts-segment" data-detail-name="2" style="display: none;">
+            <div class="ts-grid is-relaxed">
+                <div class="column is-8-wide">
+                    <div class="section-header">
+                        <div class="ts-header is-heading is-heavy">處理者資訊</div>
+                    </div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">處理者代碼</td>
+                                <td>{{ manifest.processor_id }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">處理者名稱</td>
+                                <td>{{ manifest.processor_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">收受日期時間</td>
+                                <td>
+                                    {% if manifest.receive_date %}
+                                        {{ manifest.receive_date|date:"Y-m-d" }} {{ manifest.receive_time|time:"H:i:s" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">中間處理方式</td>
+                                <td>{{ manifest.intermediate_treatment|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">處理完成日期時間</td>
+                                <td>
+                                    {% if manifest.processing_completion_date %}
+                                        {{ manifest.processing_completion_date|date:"Y-m-d" }} {{ manifest.processing_completion_time|time:"H:i:s" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">最終處置方式</td>
+                                <td>{{ manifest.final_disposal_method|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">處理者確認</td>
+                                <td>
+                                    {% if manifest.processor_confirmation %}
+                                        <span class="ts-icon is-check-icon status-confirmed"></span> 已確認
+                                    {% else %}
+                                        <span class="ts-icon is-xmark-icon status-pending"></span> 未確認
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">處理者運載車號</td>
+                                <td>{{ manifest.processor_vehicle|default:"-" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="column is-6-wide">
+                    <div class="section-header">
+                        <div class="ts-header is-heading is-heavy">最終處置資訊</div>
+                    </div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">最終處置者代碼</td>
+                                <td>{{ manifest.final_processor_id|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">最終處置者名稱</td>
+                                <td>{{ manifest.final_processor_name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">進場日期時間</td>
+                                <td>
+                                    {% if manifest.entry_date %}
+                                        {{ manifest.entry_date|date:"Y-m-d" }} {{ manifest.entry_time|time:"H:i:s" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">進場編號</td>
+                                <td>{{ manifest.entry_number|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">最終處置者確認</td>
+                                <td>
+                                    {% if manifest.final_processor_confirmation %}
+                                        <span class="ts-icon is-check-icon status-confirmed"></span> 已確認
+                                    {% else %}
+                                        <span class="ts-icon is-xmark-icon status-pending"></span> 未確認
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">最終流向</td>
+                                <td>{{ manifest.final_destination|default:"-" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 廢棄物資訊 -->
+        <div class="ts-segment" data-detail-name="3" style="display: none;">
+            <div class="section-header">
+                <div class="ts-header is-heading is-heavy">廢棄物資訊</div>
+            </div>
+            <table class="ts-table is-basic is-celled">
+                <tbody>
+                    <tr>
+                        <td class="is-secondary" width="180">廢棄物代碼</td>
+                        <td>{{ manifest.waste_code }}</td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">廢棄物名稱</td>
+                        <td>{{ manifest.waste_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">廢棄物ID</td>
+                        <td>{{ manifest.waste_id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="is-secondary">申報重量</td>
+                        <td>{{ manifest.reported_weight }} kg</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

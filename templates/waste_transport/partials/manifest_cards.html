@@ -1,0 +1,43 @@
+{% if manifests %}
+    {% for item in manifests %}
+        <div class="ts-box manifest-card has-top-spaced" 
+             data-manifest-id="{{ item.manifest_id }}" 
+             data-waste-id="{{ item.waste_id }}"
+             data-type="{{ item.type }}"
+             style="border-left: 4px solid {% if item.type == 'disposal' %}var(--ts-warning-500){% else %}var(--ts-tonal-primary-400){% endif %};">
+            <div class="ts-content">
+                <div class="ts-grid is-relaxed">
+                    <div class="column is-fluid">
+                        <div class="ts-checkbox">
+                            <input type="checkbox" class="manifest-checkbox" id="manifest-{{ item.type }}-{{ item.manifest_id }}-{{ item.waste_id }}">
+                            <label for="manifest-{{ item.type }}-{{ item.manifest_id }}-{{ item.waste_id }}"></label>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="ts-badge is-{{ item.type }}">{{ item.type_display }}</div>
+                    </div>
+                </div>
+                
+                <div class="ts-header has-top-spaced-small">
+                    <div class="sub header monospace">聯單編號 : {{ item.manifest_id }}</div>
+                </div>
+                
+                <div class="ts-grid is-relaxed has-top-spaced-small">
+                    <div class="column is-16-wide">
+                        {% if item.type == 'disposal' %}
+                            <div class="ts-text is-description">廢棄物名稱：{{ item.manifest.waste_name }}</div>
+                        {% else %}
+                            <div class="ts-text is-description">物質名稱：{{ item.manifest.substance_name }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="ts-empty is-centered">
+        <div class="ts-icon is-file-lines-icon"></div>
+        <div class="header">無符合條件的聯單</div>
+        <div class="description">請調整篩選條件或匯入新的聯單資料</div>
+    </div>
+{% endif %}

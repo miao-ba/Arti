@@ -1,0 +1,167 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" class="is-light">
+    <head>
+        <!-- Metadata -->
+        <meta charset="UTF-8">
+        <link rel="icon" type="image/png" sizes="192x192" href="{% block icon %}/static/icon/trash-512.png{% endblock %}">
+        <title>{% block title %}{% endblock %}</title>
+        <!-- Core: Tocas UI -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tocas/5.0.1/tocas.min.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tocas/5.0.1/tocas.min.js"></script>
+        <!-- Fonts: Noto Sans TC -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+        <!-- Enable: Responsive -->
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <!-- jQuery -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <!-- Chart: Apexchart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        <!-- Searchable Dropdown: Select2 -->
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <!-- Draggable List: SortableJS -->
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+        <!-- Color Palette: Coloris -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.css"/>
+        <script src="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.js"></script>
+        <!-- PNG export: html2canvas -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <!-- PDF export & Printing: pdfmake -->
+        <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.18/build/pdfmake.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.18/build/vfs_fonts.js"></script>
+        <!-- Default Styles-->
+        <link rel="stylesheet" href="{% static 'css/color-palette.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/styles-button.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/animation.css' %}" />
+        <link rel="stylesheet" href="{% static 'css/fontface.css' %}">
+        <!-- Addon Styles -->
+        {% block stylesheet %}{% endblock %}
+        <!-- Special schemes -->
+        <style>
+            /* 設置全頁面浮水印背景 */
+            .is-baka {
+                background-image: url('/static/svg/number-circle-nine-bold-svgrepo-com.svg'); /* 替換為你的浮水印圖片路徑 */
+                background-repeat: repeat; /* 背景重複 */
+                background-size: 200px 200px; /* 調整浮水印大小 */
+                background-position: center; /* 背景居中 */
+            }
+            .is-sus {
+                background-image: url('/static/svg/among-us-svgrepo-com.svg'); /* 替換為你的浮水印圖片路徑 */
+                background-repeat: repeat; /* 背景重複 */
+                background-size: 200px 200px; /* 調整浮水印大小 */
+                background-position: center; /* 背景居中 */
+            }
+        </style>
+    </head>
+    <body class="
+        {% if user.username == "amogus" %}
+            is-sus
+        {% elif user.username == "funkycirno"  %}
+        	is-baka
+        {% endif %}
+    ">
+        <!-- Navigation Bar -->
+        <div class="ts-app-topbar background-secondary is-large is-bold">
+            <div class="start">
+                {% block navbar-start %}
+                    <div class="ts-tab" style="">
+                        <a class="item tab-item {% if request.path == '/main/' or request.path == '/' %}is-active{% endif %}" href="{% url 'main' %}"><span class="ts-text is-bold">主頁面</span></a>
+                        {% if user_is_over_imp %} <a class="item tab-item {% if '/waste_transport/' in request.path %}is-active{% endif %}" href="{% url 'waste_transport:manifest_list' %}">聯單管理</a>{% endif %}
+                        {% if user_is_over_reg %} <a class="item tab-item {% if request.path == '/management/database/' %}is-active{% endif %}" href="{% url 'management:database_index' %}"><span class="ts-text is-bold">廢棄物管理</span></a>{% endif %}
+                        <a class="item tab-item {% if request.path == '/management/visualize/' %}is-active{% endif %}" href="{% url 'management:visualize_index' %}"><span class="ts-text is-bold">報表管理</span></a>
+                    </div>
+                {% endblock %}
+            </div>
+            <!-- End space -->
+            <div class="end">
+                {% block navbar-end %}
+                    {% if user.is_authenticated %}
+                        <!-- Username Tag-->
+                        <span class="ts-text is-large has-end-spaced">
+                            Hello,&nbsp;<span class="ts-text is-large is-mark monospace color-{{ permission_hi }}-inverted has-vertically-padded-small">{{ user.username }}</span> !
+                        </span>
+                        <button class="item" data-dropdown="dropdown">
+                            <span class="ts-icon is-ellipsis-vertical-icon"></span>
+                        </button>
+                        <div class="ts-dropdown is-start-icon is-relaxed" id="dropdown" data-position="bottom-end" style="--min-width: 15rem" >
+                            <!-- Simple user information-->
+                            <div style="padding-left: 1em; padding-top: 0.2em; padding-bottom: 0.2em">
+                                <!-- Identity: User Permission -->
+                                <span class="ts-text is-small is-mark is-start-aligned monospace color-{{ permission_hi }}-inverted">
+                                    {{ permission_hi|permission_name }}
+                                </span>
+                                <br>
+                                <!-- Full Name -->
+                                <span class="ts-text is-big is-bold is-start-aligned">
+                                    {{ user.get_full_name }}
+                                </span>
+                                <br>
+                                <!-- Username -->
+                                <span class="ts-text monospace is-start-aligned is-disabled">
+                                    {{ user.username }}
+                                </span>
+                            </div>
+                            <div class="divider"></div>
+                            <!-- Account Management Page: Settings -->
+                            <button class="item" onclick="location.href='{% url 'account:index_setting' %}'">
+                                <span class="ts-icon is-user-icon"></span>
+                                帳號設定(尚未實裝)
+                            </button>
+                            <!-- Account Management Page: For root & mod. -->
+                            {% if user_is_over_mod %}
+                                <button class="item" onclick="location.href='{% url 'account:manage' %}'">
+                                    <span class="ts-icon is-users-gear-icon"></span>
+                                    系統帳號管理
+                                </button>
+                            {% endif %}
+                            <!-- Only superuser/staff can access Django Administration page. -->
+                            {% if user.is_staff %}
+                                <button class="item" onclick="location.href='{% url 'admin:index' %}'">
+                                    <span class="ts-icon is-python-icon"></span>
+                                    Django Administration
+                                </button>
+                            {% endif %}
+                            <!-- Functions -->
+                            <button class="item" onclick="location.href='{% url 'account:logout' %}'">
+                                <span class="ts-icon is-arrow-right-from-bracket-icon"></span>
+                                登出
+                            </button>
+                        </div>
+                    {% else %}
+                        {% if request.session.login_as_guest %}
+                            <span class="ts-text is-large has-end-spaced-large" style="color: black">
+                                您正在以訪客身份使用中，按下右邊的按鈕登入帳號&emsp;<span class="ts-icon is-arrow-right-icon"></span>
+                            </span>
+                        </span>
+                        {% endif %}
+                        <button class="ts-button is-start-icon is-primary" onclick="location.href='{% url 'account:login' %}'">
+                            <span class="ts-icon is-arrow-right-to-bracket-icon"></span>
+                            登入
+                        </button>
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </div>
+
+        <!-- Headline -->
+
+        {% block headline %}{% endblock %}
+
+        <!-- App Content -->
+
+        <div class="ts-app-content" style="padding-top: 2em">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Bottom Description -->
+
+        {% block description %}{% endblock %}
+
+        <!-- External Scripts -->
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

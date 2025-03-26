@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}個人帳號設定{% endblock %}
+{% block navbar-start %}
+    <div class="ts-tab" style="">
+        <div class="item tab-item" onclick="history.back()">
+            <span class="ts-icon is-huge is-arrow-left-icon"></span>
+        </div>
+        <div class="item is-text">個人帳號設定</div>
+    </div>
+{% endblock %}
+{% block headline %}
+    <div class="ts-content is-tertiary is-vertically-padded" style="background-color: var(--ts-gray-200)">
+        <div class="ts-container has-vertically-spaced">
+            <div class="ts-header is-big is-heavy">個人帳號設定</div>
+            <div class="ts-text is-secondary">個人資料瀏覽與重設密碼的地方。</div>
+        </div>
+    </div>
+{% endblock %}
+{% block content %}
+    <div class="ts-container has-vertically-padded-large">
+        <div class="ts-grid is-evenly-divided is-relaxed has-top-padded">
+            <div class="column">
+                <div class="ts-box">
+                    <div class="ts-content is-rounded is-tertiary">
+                        <div class="ts-header is-large">帳號資訊</div>
+                        <div class="ts-container has-top-padded-small" id="account-info-content" current-account="{{ user.username }}">
+                            <!-- 帳號資訊將動態載入到這裡 -->
+                        </div>
+                    </div>
+                    <div class="symbol">
+                        <span class="ts-icon is-circle-info-icon"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="ts-box">
+                    <div class="ts-content is-rounded is-tertiary">
+                        <div class="ts-header is-large">更改密碼</div>
+                        <!-- Content -->
+                        <div class="ts-container has-top-padded-small">
+                            <form id="change-password-form" method="post">
+                                {% csrf_token %}
+                                <div class="ts-text is-label has-top-padded-small is-required">輸入目前密碼</div>
+                                <div class="ts-input has-top-padded-small input-required">
+                                    {{ form.old_password }}
+                                </div>
+                                <div class="ts-text is-label has-top-padded-small is-required">輸入新密碼</div>
+                                <div class="ts-input has-top-padded-small input-required">
+                                    {{ form.new_password1 }}
+                                </div>
+                                <div class="ts-text is-label has-top-padded-small is-required">再次輸入新密碼</div>
+                                <div class="ts-input has-top-padded-small input-required">
+                                    {{ form.new_password2 }}
+                                </div>
+                                {% if form.errors %}
+                                    <div class="ts-text is-negative" style="padding-top: 1em;">
+                                        {% for field, errors in form.errors.items %}
+                                            {% for error in errors %}
+                                                <p>{{ error }}</p>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </div>
+                                    <div id="error-messages" class="ts-text is-negative" style="padding-top: 1em; display: none;"></div>
+                                {% endif %}
+                                <div class="ts-divider has-top-padded-small "></div>
+                                <button id="submit-all" class="ts-button" type="submit">修改</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="symbol">
+                        <span class="ts-icon is-key-icon"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'js/account/setting.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("change-password-form");
+            const errorBox = document.getElementById("error-messages");  // 確保錯誤區塊存在
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();  // 防止頁面刷新
+
+                const formData = new FormData(form);
+
+                fetch("{% url 'account:change_password' %}", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("密碼修改成功！");
+                            window.location.href = "{% url 'main' %}";  // 成功後導向首頁
+                        } else {
+                            if (errorBox) {  // 避免 null 錯誤
+                                errorBox.innerHTML = "";  // 清空舊錯誤
+                                for (const [field, messages] of Object.entries(data.errors)) {
+                                    messages.forEach(msg => {
+                                        let errorText = document.createElement("p");
+                                        errorText.textContent = msg;
+                                        errorBox.appendChild(errorText);
+                                    });
+                                }
+                                errorBox.style.display = "block";  // 顯示錯誤訊息
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error("請求失敗", error);
+                        alert("發生錯誤，請稍後再試！");
+                    });
+            });
+        });
+    </script>
+{% endblock %}

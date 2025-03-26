@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}再利用聯單詳情{% endblock %}
+
+{% block navbar-start %}
+    <div class="ts-tab" style="">
+        <a class="item tab-item" href="{% url 'waste_transport:manifest_list' %}">
+            <span class="ts-icon is-huge is-arrow-left-icon"></span>
+        </a>
+        <div class="item is-text">再利用聯單詳情</div>
+    </div>
+{% endblock %}
+
+{% block headline %}
+    <div class="ts-content is-tertiary is-vertically-padded" style="background-color: var(--ts-gray-200)">
+        <div class="ts-container has-vertically-spaced">
+            <div class="ts-header is-big is-heavy">再利用聯單詳情</div>
+            <div class="ts-text is-secondary">聯單編號：<span class="monospace">{{ manifest.manifest_id }}</span></div>
+            <div class="ts-text is-description">事業機構：{{ manifest.company_name }}</div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="ts-container has-vertically-padded-big">
+        <div class="ts-box">
+            <div class="ts-content">
+                <div class="ts-tabs">
+                    <a class="item is-active" data-tab="0">基本資訊</a>
+                    <a class="item" data-tab="1">清除者資訊</a>
+                    <a class="item" data-tab="2">再利用者資訊</a>
+                    <a class="item" data-tab="3">物質資訊</a>
+                </div>
+                
+                <!-- 基本資訊 -->
+                <div class="ts-segment" data-name="0">
+                    <div class="ts-grid is-relaxed">
+                        <div class="column is-6-wide">
+                            <div class="ts-header is-heading is-heavy has-top-spaced">基本資訊</div>
+                            <table class="ts-table is-basic is-celled">
+                                <tbody>
+                                    <tr>
+                                        <td class="is-secondary" width="180">聯單編號</td>
+                                        <td><span class="monospace">{{ manifest.manifest_id }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">事業機構代碼</td>
+                                        <td>{{ manifest.company_id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">事業機構名稱</td>
+                                        <td>{{ manifest.company_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">申報日期時間</td>
+                                        <td>{{ manifest.report_date|date:"Y-m-d" }} {{ manifest.report_time|time:"H:i:s" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">清運日期時間</td>
+                                        <td>
+                                            {% if manifest.transport_date %}
+                                                {{ manifest.transport_date|date:"Y-m-d" }} {{ manifest.transport_time|time:"H:i:s" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">聯單確認</td>
+                                        <td>
+                                            {% if manifest.manifest_confirmation %}
+                                                <span class="ts-icon is-check-icon" style="color: var(--ts-positive-500)"></span> 已確認
+                                            {% else %}
+                                                <span class="ts-icon is-xmark-icon" style="color: var(--ts-negative-500)"></span> 未確認
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">產源是否已確認申報聯單內容</td>
+                                        <td>
+                                            {% if manifest.source_confirmed %}
+                                                <span class="ts-icon is-check-icon" style="color: var(--ts-positive-500)"></span> 已確認
+                                            {% else %}
+                                                <span class="ts-icon is-xmark-icon" style="color: var(--ts-negative-500)"></span> 未確認
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="column is-6-wide">
+                            <div class="ts-header is-heading is-heavy has-top-spaced">再利用資訊</div>
+                            <table class="ts-table is-basic is-celled">
+                                <tbody>
+                                    <tr>
+                                        <td class="is-secondary" width="180">再利用用途</td>
+                                        <td>{{ manifest.reuse_purpose|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">再利用用途說明</td>
+                                        <td>{{ manifest.reuse_purpose_description|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">再利用方式</td>
+                                        <td>{{ manifest.reuse_method|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">是否由貯存地起運</td>
+                                        <td>
+                                            {% if manifest.from_storage %}
+                                                <span class="ts-icon is-check-icon" style="color: var(--ts-positive-500)"></span> 是
+                                            {% else %}
+                                                <span class="ts-icon is-xmark-icon" style="color: var(--ts-negative-500)"></span> 否
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">起運地</td>
+                                        <td>{{ manifest.origin_location|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">製程代碼</td>
+                                        <td>{{ manifest.process_code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="is-secondary">製程名稱</td>
+                                        <td>{{ manifest.process_name }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 清除者資訊 -->
+                <div class="ts-segment" data-name="1" style="display: none;">
+                    <div class="ts-header is-heading is-heavy has-top-spaced">清除者資訊</div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">清除者代碼</td>
+                                <td>{{ manifest.carrier_id|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">清除者名稱</td>
+                                <td>{{ manifest.carrier_name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">其它清除者</td>
+                                <td>{{ manifest.other_carrier|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">運送日期時間</td>
+                                <td>
+                                    {% if manifest.delivery_date %}
+                                        {{ manifest.delivery_date|date:"Y-m-d" }} {{ manifest.delivery_time|time:"H:i:s" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">運載車號</td>
+                                <td>{{ manifest.carrier_vehicle|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">清除者實際運載車號</td>
+                                <td>{{ manifest.carrier_vehicle_number|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">清除者確認</td>
+                                <td>
+                                    {% if manifest.carrier_confirmation %}
+                                        <span class="ts-icon is-check-icon" style="color: var(--ts-positive-500)"></span> 已確認
+                                    {% else %}
+                                        <span class="ts-icon is-xmark-icon" style="color: var(--ts-negative-500)"></span> 未確認
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">清除者不接受原因</td>
+                                <td>{{ manifest.carrier_rejection_reason|default:"-" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 再利用者資訊 -->
+                <div class="ts-segment" data-name="2" style="display: none;">
+                    <div class="ts-header is-heading is-heavy has-top-spaced">再利用者資訊</div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">再利用者代碼</td>
+                                <td>{{ manifest.reuser_id|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">再利用者名稱</td>
+                                <td>{{ manifest.reuser_name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">其它再利用者</td>
+                                <td>{{ manifest.other_reuser|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">再利用者性質</td>
+                                <td>{{ manifest.reuser_nature|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">回收日期時間</td>
+                                <td>
+                                    {% if manifest.recovery_date %}
+                                        {{ manifest.recovery_date|date:"Y-m-d" }} {{ manifest.recovery_time|time:"H:i:s" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">再利用完成時間</td>
+                                <td>{{ manifest.reuse_completion_time|date:"Y-m-d H:i:s"|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">再利用者實際運載車號</td>
+                                <td>{{ manifest.reuser_vehicle|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">再利用者是否確認</td>
+                                <td>
+                                    {% if manifest.reuser_confirmation %}
+                                        <span class="ts-icon is-check-icon" style="color: var(--ts-positive-500)"></span> 已確認
+                                    {% else %}
+                                        <span class="ts-icon is-xmark-icon" style="color: var(--ts-negative-500)"></span> 未確認
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">再利用者不接受原因</td>
+                                <td>{{ manifest.reuser_rejection_reason|default:"-" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 物質資訊 -->
+                <div class="ts-segment" data-name="3" style="display: none;">
+                    <div class="ts-header is-heading is-heavy has-top-spaced">物質資訊</div>
+                    <table class="ts-table is-basic is-celled">
+                        <tbody>
+                            <tr>
+                                <td class="is-secondary" width="180">物質代碼</td>
+                                <td>{{ manifest.substance_code }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">物質名稱</td>
+                                <td>{{ manifest.substance_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">廢棄物ID</td>
+                                <td>{{ manifest.waste_id }}</td>
+                            </tr>
+                            <tr>
+                                <td class="is-secondary">申報重量</td>
+                                <td>{{ manifest.reported_weight }} kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 標籤頁切換
+        const tabs = document.querySelectorAll('.ts-tabs .item');
+        const segments = document.querySelectorAll('.ts-segment');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除所有標籤頁的活動狀態
+                tabs.forEach(t => t.classList.remove('is-active'));
+                // 設置當前標籤頁為活動狀態
+                this.classList.add('is-active');
+                
+                // 隱藏所有內容區塊
+                segments.forEach(segment => {
+                    segment.style.display = 'none';
+                });
+                
+                // 顯示與當前標籤頁對應的內容區塊
+                const tabIndex = this.getAttribute('data-tab');
+                const targetSegment = document.querySelector(`.ts-segment[data-name="${tabIndex}"]`);
+                if (targetSegment) {
+                    targetSegment.style.display = 'block';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

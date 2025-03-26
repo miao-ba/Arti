@@ -1,0 +1,38 @@
+/* Navbar style: On hover */
+.ts-tab .tab-item:hover {
+    background-color: white;
+    color: black;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Snackbar style */
+.ts-snackbar {
+    position: fixed;
+    bottom: -50px; /* 初始位置在畫面下方 */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    /* 使用 CSS 動畫控制進場與出場 */
+    animation: slideUp 0.5s forwards, fadeout 0.5s 3s forwards;
+}
+
+@keyframes slideUp {
+    from {
+        bottom: -50px;
+        opacity: 0;
+    }
+    to {
+        bottom: 20px; /* 進場後距離底部 20px */
+        opacity: 1;
+    }
+}
+
+@keyframes fadeout {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

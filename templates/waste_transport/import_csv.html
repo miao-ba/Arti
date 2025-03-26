@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}匯入CSV聯單資料{% endblock %}
+
+{% block navbar-start %}
+    <div class="ts-tab" style="">
+        <a class="item tab-item" href="{% url 'waste_transport:manifest_list' %}">
+            <span class="ts-icon is-huge is-arrow-left-icon"></span>
+        </a>
+        <div class="item is-text">匯入CSV聯單資料</div>
+    </div>
+{% endblock %}
+
+{% block headline %}
+    <div class="ts-content is-tertiary is-vertically-padded" style="background-color: var(--ts-gray-200)">
+        <div class="ts-container has-vertically-spaced">
+            <div class="ts-header is-big is-heavy">匯入CSV聯單資料</div>
+            <div class="ts-text is-secondary">從CSV檔案匯入清除聯單或再利用聯單資料</div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="ts-container has-vertically-padded-big">
+        <!-- 訊息顯示 -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="ts-notice {% if message.tags == 'error' %}is-negative{% elif message.tags == 'success' %}is-positive{% else %}is-info{% endif %} has-bottom-spaced-large">
+                    <div class="content">
+                        <div class="header">{{ message.tags|title }}</div>
+                        <div class="description">{{ message }}</div>
+                    </div>
+                    <button class="close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="ts-grid is-relaxed">
+            <!-- 左側：匯入表單 -->
+            <div class="column is-8-wide">
+                <div class="ts-box">
+                    <div class="ts-content">
+                        <div class="ts-header is-heavy">匯入資料</div>
+                        <form method="post" enctype="multipart/form-data" class="has-top-spaced">
+                            {% csrf_token %}
+                            <div class="ts-grid is-relaxed">
+                                <div class="column is-6-wide">
+                                    <div class="ts-text is-label">{{ form.csv_file.label }}</div>
+                                    {{ form.csv_file }}
+                                    <div class="ts-text is-description has-top-spaced-small" id="file-feedback">
+                                        {{ form.csv_file.help_text }}
+                                    </div>
+                                </div>
+                                <div class="column is-6-wide">
+                                    <div class="ts-text is-label">{{ form.import_type.label }}</div>
+                                    {{ form.import_type }}
+                                </div>
+                            </div>
+                            <div class="ts-grid is-relaxed has-top-spaced">
+                                <div class="column is-6-wide">
+                                    <div class="ts-text is-label">{{ form.conflict_resolution.label }}</div>
+                                    {{ form.conflict_resolution }}
+                                    <div class="ts-text is-description has-top-spaced-small">
+                                        選擇當遇到重複聯單編號時的處理方式，建議選擇「詢問如何處理」
+                                    </div>
+                                </div>
+                                <div class="column is-6-wide">
+                                    <button type="submit" class="ts-button is-fluid is-positive is-start-icon has-top-spaced-huge" id="import-button">
+                                        <span class="ts-icon is-upload-icon"></span> 匯入
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- CSV 格式說明 -->
+                <div class="ts-box has-top-spaced-large">
+                    <div class="ts-content">
+                        <div class="ts-header is-heavy">CSV 格式說明</div>
+                        <div class="ts-tabs has-top-spaced">
+                            <a class="item is-active" data-tab="0">清除單格式</a>
+                            <a class="item" data-tab="1">再利用單格式</a>
+                        </div>
+                        <div class="ts-segment" data-name="0">
+                            <div class="ts-text">清除單 CSV 檔應包含以下欄位：</div>
+                            <div class="ts-text monospace is-small has-top-spaced csv-format-help">
+                                聯單編號,事業機構代碼,事業機構名稱,申報日期,申報時間,清運日期,清運時間,清除者代碼,清除者名稱,運送日期,運送時間,運載車號,清除者運載車號,清除者確認,處理者代碼,處理者名稱,收受日期,收受時間,中間處理方式,處理完成日期,處理完成時間,最終處置方式,處理者確認,最終處置者代碼,最終處置者名稱,進場日期,進場時間,進場編號,最終處置者確認,最終流向,廢棄物代碼,廢棄物名稱,申報重量,製程代碼,製程名稱,是否由貯存地起運,起運地,處理者運載車號,廢棄物ID,聯單確認
+                            </div>
+                            <div class="ts-text has-top-spaced">範例資料：</div>
+                            <div class="ts-text monospace is-small has-top-spaced csv-format-help">
+                                E480042710700819,E4800427,高雄榮民總醫院,2018/12/24,14:24:10,2019/1/1,07:00:00,S1590027,環碩環保工程股份有限公司,2019/1/1,07:00:00,119-BR,119-BR,Y,E5602998,高雄市政府環保局南區垃圾焚化廠,2019/1/1,09:17:00,焚化處理,2019/1/8,09:00:00,掩埋處理,Y,,,,,,,最終處置,D-1801,事業活動產生之一般性垃圾,2.63,0,非製造程序產出類別,否,,119-BR,877,Y
+                            </div>
+                        </div>
+                        <div class="ts-segment" data-name="1" style="display: none;">
+                            <div class="ts-text">再利用單 CSV 檔應包含以下欄位：</div>
+                            <div class="ts-text monospace is-small has-top-spaced csv-format-help">
+                                聯單編號,事業機構代碼,事業機構名稱,申報日期,申報時間,清運日期,清運時間,再利用用途,再利用用途說明,再利用方式,清除者代碼,清除者名稱,其它清除者,運送日期,運送時間,運載車號,清除者實際運載車號,再利用者代碼,再利用者名稱,其它再利用者,再利用者性質,回收日期,回收時間,再利用完成時間,清除者是否確認,再利用者是否確認,清除者不接受原因,再利用者不接受原因,物質代碼,物質名稱,申報重量,製程代碼,製程名稱,是否由貯存地起運,起運地,再利用者實際運載車號,廢棄物ID,產源是否已確認申報聯單內容
+                            </div>
+                            <div class="ts-text has-top-spaced">範例資料：</div>
+                            <div class="ts-text monospace is-small has-top-spaced csv-format-help">
+                                E480042710700812,E4800427,高雄榮民總醫院,2018/12/24,10:59:10,2019/1/2,10:30:00,公告再利用,,廠外,C1111111,再利用者清除,,,,0687-VA,0687-VA,E2001962,百晟資源科技有限公司大發廠,,,2019/1/2,11:30:00,2019/1/5 16:00:00,,Y,,,R-0201,廢塑膠,0.42,0,非製造程序產出類別,否,,0687-VA,9474,Y
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：最近匯入記錄 -->
+            <div class="column is-4-wide">
+                <div class="ts-box">
+                    <div class="ts-content">
+                        <div class="ts-header is-heavy">最近匯入記錄</div>
+                        {% if recent_imports %}
+                            <div class="ts-list is-separated has-top-spaced">
+                                {% for import_record in recent_imports %}
+                                    <div class="item import-history-item is-{{ import_record.import_type }}">
+                                        <div class="ts-content">
+                                            <div class="ts-header">{{ import_record.filename }}</div>
+                                            <div class="ts-text">
+                                                <div class="ts-badge is-{{ import_record.import_type }}">
+                                                    {% if import_record.import_type == 'disposal' %}清除單{% else %}再利用單{% endif %}
+                                                </div>
+                                                <span>{{ import_record.import_date|date:"Y-m-d H:i" }}</span>
+                                            </div>
+                                            <div class="ts-text">
+                                                總記錄：{{ import_record.total_records }}，
+                                                已匯入：{{ import_record.imported_records }}，
+                                                略過：{{ import_record.skipped_records }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="ts-notice is-info has-top-spaced">
+                                <div class="content">
+                                    <div class="description">尚無匯入記錄</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 檔案衝突解決對話框 -->
+    {% if show_conflict_dialog %}
+    <div class="ts-modal is-visible" id="conflict-dialog">
+        <div class="content">
+            <div class="header">檔案衝突處理</div>
+            <div class="description">
+                <p>匯入的檔案中有 {{ conflicting_records|length }} 筆資料與資料庫中的記錄衝突。請選擇處理方式：</p>
+                
+                <div class="ts-table is-small is-celled">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>聯單編號</th>
+                                <th>事業機構名稱</th>
+                                <th>申報日期</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in conflicting_records %}
+                            <tr>
+                                <td class="monospace">{{ record.manifest_id }}</td>
+                                <td>{{ record.company_name }}</td>
+                                <td>{{ record.report_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <form method="post" action="{% url 'waste_transport:resolve_conflicts' %}">
+                    {% csrf_token %}
+                    <div class="ts-grid has-top-spaced">
+                        <div class="column">
+                            <div class="ts-radio">
+                                <input type="radio" name="conflict_resolution" value="skip" id="resolution-skip" checked>
+                                <label for="resolution-skip">略過 - 保留原始資料</label>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="ts-radio">
+                                <input type="radio" name="conflict_resolution" value="replace" id="resolution-replace">
+                                <label for="resolution-replace">取代 - 使用新資料</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ts-grid">
+                        <div class="column">
+                            <div class="ts-radio">
+                                <input type="radio" name="conflict_resolution" value="keep_both" id="resolution-keep_both">
+                                <label for="resolution-keep_both">保留兩者 - 另存新資料</label>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="ts-radio">
+                                <input type="radio" name="conflict_resolution" value="smart_merge" id="resolution-smart_merge">
+                                <label for="resolution-smart_merge">智慧合併 - 合併非空欄位</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="import_session_id" value="{{ import_session_id }}">
+                    
+                    <div class="ts-space"></div>
+                    <div class="ts-grid">
+                        <div class="column is-fluid"></div>
+                        <div class="column">
+                            <button type="submit" class="ts-button is-fluid is-positive">確定</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/waste_transport/manifest.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 處理檔案選擇變更事件
+        const fileInput = document.querySelector('input[type="file"]');
+        const feedbackElement = document.getElementById('file-feedback');
+        const importButton = document.getElementById('import-button');
+        
+        if (fileInput && feedbackElement && importButton) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                
+                if (!file) {
+                    feedbackElement.textContent = '未選擇檔案';
+                    feedbackElement.className = 'ts-text is-description has-top-spaced-small';
+                    importButton.disabled = true;
+                    return;
+                }
+                
+                // 檢查檔案類型
+                if (!file.name.endsWith('.csv')) {
+                    feedbackElement.textContent = '檔案格式錯誤，僅支援 .csv 檔案';
+                    feedbackElement.className = 'ts-text is-description has-top-spaced-small is-negative';
+                    importButton.disabled = true;
+                    return;
+                }
+                
+                // 檢查檔案大小 (5MB 限制)
+                if (file.size > 5 * 1024 * 1024) {
+                    feedbackElement.textContent = '檔案大小超過限制 (最大 5MB)';
+                    feedbackElement.className = 'ts-text is-description has-top-spaced-small is-negative';
+                    importButton.disabled = true;
+                    return;
+                }
+                
+                // 檔案有效
+                feedbackElement.textContent = `已選擇檔案: ${file.name} (${formatFileSize(file.size)})`;
+                feedbackElement.className = 'ts-text is-description has-top-spaced-small is-positive';
+                importButton.disabled = false;
+            });
+            
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            }
+        }
+    });
+</script>
+{% endblock %}

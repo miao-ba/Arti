@@ -1,0 +1,119 @@
+<form id="conflict-resolution-form">
+    {% csrf_token %}
+    <p>匯入的檔案中有 {{ conflicting_records|length }} 筆資料與資料庫中的記錄衝突。請選擇處理方式：</p>
+    
+    <div class="ts-table is-small is-celled">
+        <table>
+            <thead>
+                <tr>
+                    <th>聯單編號</th>
+                    <th>廢棄物ID</th>
+                    <th>事業機構名稱</th>
+                    <th>申報日期</th>
+                    <th>重量</th>
+                    <th>衝突詳情</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in conflicting_records %}
+                <tr>
+                    <td class="monospace">{{ record.manifest_id }}</td>
+                    <td>{{ record.waste_id }}</td>
+                    <td>{{ record.company_name }}</td>
+                    <td>{{ record.report_date }}</td>
+                    <td>{{ record.reported_weight }} kg</td>
+                    <td>
+                        {% for detail in conflict_details %}
+                            {% if detail.manifest_id == record.manifest_id and detail.waste_id == record.waste_id %}
+                                {% if detail.differences %}
+                                    <button type="button" class="ts-button is-small is-start-icon view-differences-btn" 
+                                            data-manifest-id="{{ record.manifest_id }}" 
+                                            data-waste-id="{{ record.waste_id }}">
+                                        <span class="ts-icon is-search-icon"></span> 查看差異
+                                    </button>
+                                    <div class="differences-details" id="diff-{{ record.manifest_id }}-{{ record.waste_id }}" style="display: none;">
+                                        <div class="ts-divider"></div>
+                                        <div class="ts-list is-small">
+                                            {% for field, diff in detail.differences.items %}
+                                            <div class="item">
+                                                <div class="ts-content">
+                                                    <div class="ts-header is-small">{{ diff.field }}</div>
+                                                    <div class="ts-text is-description">
+                                                        <span class="ts-text is-negative">舊值: {{ diff.old }}</span><br>
+                                                        <span class="ts-text is-positive">新值: {{ diff.new }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="ts-text is-description">數據完全一致</span>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="ts-space"></div>
+    
+    <div class="ts-grid is-relaxed">
+        <div class="column">
+            <div class="ts-text is-label">選擇處理方式：</div>
+            <div class="ts-radio is-filled">
+                <input type="radio" name="conflict_resolution" value="skip" id="resolution-skip" checked>
+                <label for="resolution-skip">略過 - 保留原始資料</label>
+            </div>
+            <div class="ts-text is-description has-top-spaced-small">
+                系統將保留資料庫中的原始資料，略過匯入檔案中的重複資料。
+            </div>
+        </div>
+        <div class="column">
+            <div class="ts-radio is-filled has-top-spaced-huge">
+                <input type="radio" name="conflict_resolution" value="replace" id="resolution-replace">
+                <label for="resolution-replace">取代 - 使用新資料</label>
+            </div>
+            <div class="ts-text is-description has-top-spaced-small">
+                系統將使用匯入檔案中的資料取代資料庫中的原始資料。
+            </div>
+        </div>
+    </div>
+    
+    <div class="ts-grid is-relaxed has-top-spaced">
+        <div class="column">
+            <div class="ts-radio is-filled">
+                <input type="radio" name="conflict_resolution" value="keep_both" id="resolution-keep_both">
+                <label for="resolution-keep_both">保留兩者 - 另存新資料</label>
+            </div>
+            <div class="ts-text is-description has-top-spaced-small">
+                系統將保留原始資料，並額外儲存匯入檔案中的資料，以新的聯單編號命名。
+            </div>
+        </div>
+        <div class="column">
+            <div class="ts-radio is-filled">
+                <input type="radio" name="conflict_resolution" value="smart_merge" id="resolution-smart_merge">
+                <label for="resolution-smart_merge">智慧合併 - 合併非空欄位</label>
+            </div>
+            <div class="ts-text is-description has-top-spaced-small">
+                系統將保留原始資料，並用匯入檔案中非空的欄位值更新原始資料。
+            </div>
+        </div>
+    </div>
+    
+    <input type="hidden" name="import_session_id" value="{{ import_session_id }}">
+    
+    <div class="ts-space"></div>
+    <div class="ts-grid">
+        <div class="column is-fluid"></div>
+        <div class="column">
+            <div class="ts-wrap is-compact">
+                <button type="button" id="cancel-conflict-resolution" class="ts-button is-outlined">取消</button>
+                <button type="button" id="confirm-conflict-resolution" class="ts-button is-positive">確定</button>
+            </div>
+        </div>
+    </div>
+</form>
