@@ -597,3 +597,277 @@
         color: black !important;
     }
 }
+/* 聯單卡片樣式 */
+.manifest-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 0.75rem;
+    position: relative;
+    border-radius: 4px;
+}
+
+.manifest-card:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.manifest-card.is-active {
+    border-color: var(--ts-primary-500);
+    background-color: var(--ts-primary-50);
+}
+
+/* 標籤樣式 */
+.ts-badge.is-disposal {
+    background-color: var(--ts-warning-500);
+    color: white;
+}
+
+.ts-badge.is-reuse {
+    background-color: var(--ts-primary-500);
+    color: white;
+}
+
+/* 詳細資訊容器樣式 */
+.manifest-detail-container {
+    border-radius: 4px;
+    border: 1px solid var(--ts-gray-300);
+    overflow: hidden;
+}
+
+/* Windows 樣式模態視窗 */
+.windows-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.windows-modal-window {
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    width: 80%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.windows-modal-titlebar {
+    background-color: var(--ts-primary-500);
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.windows-modal-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.windows-modal-controls {
+    display: flex;
+}
+
+.windows-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+.windows-modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(90vh - 50px);
+}
+
+/* 進度條樣式 */
+.ts-progress {
+    margin: 2rem 0;
+}
+
+.ts-progress .bar {
+    height: 1.5rem;
+    background-color: var(--ts-primary-500);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+    position: relative;
+}
+
+.ts-progress .text {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-weight: bold;
+}
+
+/* 衝突表格樣式 */
+.conflict-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.conflict-table th,
+.conflict-table td {
+    padding: 8px 12px;
+    border: 1px solid var(--ts-gray-300);
+    text-align: left;
+}
+
+.conflict-table th {
+    background-color: var(--ts-gray-100);
+    font-weight: bold;
+}
+
+.conflict-table .different-value {
+    background-color: rgba(255, 240, 200, 0.5);
+    font-weight: bold;
+}
+
+/* 衝突解決選項樣式 */
+.conflict-resolution-container {
+    background-color: var(--ts-gray-100);
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+}
+
+.conflict-resolution-title {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.conflict-resolution-options {
+    margin-left: 1rem;
+}
+
+.conflict-resolution-option {
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.conflict-resolution-option input[type="radio"] {
+    margin-right: 0.5rem;
+}
+
+.conflict-resolution-description {
+    color: var(--ts-gray-600);
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.apply-to-all-checkbox {
+    margin-top: 1rem;
+    border-top: 1px solid var(--ts-gray-300);
+    padding-top: 1rem;
+}
+
+/* 自動完成下拉選單 */
+.autocomplete-dropdown {
+    position: absolute;
+    background-color: white;
+    border: 1px solid var(--ts-gray-300);
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.is-hover {
+    background-color: var(--ts-primary-50);
+}
+
+.autocomplete-no-result,
+.autocomplete-error {
+    padding: 8px 12px;
+    color: var(--ts-gray-600);
+    font-style: italic;
+}
+
+/* 通知消息 */
+.ts-snackbar {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--ts-gray-800);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.ts-snackbar.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.ts-snackbar .content {
+    margin-right: 1rem;
+}
+
+.ts-snackbar .close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+.ts-snackbar .close:before {
+    content: "×";
+    font-size: 1.2rem;
+}
+
+/* 狀態標記樣式 */
+.status-confirmed {
+    color: var(--ts-success-500);
+}
+
+.status-pending {
+    color: var(--ts-warning-500);
+}
+
+/* CSV 格式說明樣式 */
+.csv-format-help {
+    background-color: var(--ts-gray-100);
+    padding: 0.75rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* 美化空間 */
+.ts-space {
+    height: 1rem;
+}
+
+.ts-space.is-large {
+    height: 2rem;
+}

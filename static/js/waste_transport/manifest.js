@@ -4,12 +4,13 @@
  */
 
 // 全局變數
-let importSessionData = null;
-let selectedManifests = new Set();
 let isImporting = false;
-let progressInterval = null;
+let currentConflictIndex = 0;
+let csvData = null;
+let importResults = { success: 0, skipped: 0, failed: [], total: 0 };
+let allConflicts = [];
 let applyToAll = false;
-let currentConflictResolution = 'skip';
+let currentResolution = '';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // 頁面載入完成後初始化
@@ -26,9 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化全選功能
     initSelectAllCheckbox();
     
-    // 初始化CSV標籤切換
-    initCSVFormatTabs();
-    
     // 初始化模態視窗關閉事件
     initModalCloseEvents();
     
@@ -40,12 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化匯入表單的檔案選擇事件
     initFileInputHandler();
-    
-    // 初始化幫助按鈕
-    const helpBtn = document.getElementById('help-button');
-    if (helpBtn) {
-        helpBtn.addEventListener('click', openHelpModal);
-    }
     
     // 初始化自動完成功能
     initAutocomplete();
@@ -140,34 +132,6 @@ function initDetailTabs() {
 }
 
 /**
- * 初始化CSV格式標籤切換
- */
-function initCSVFormatTabs() {
-    document.addEventListener('click', function(event) {
-        if (event.target.matches('[data-tab="csv-disposal"], [data-tab="csv-reuse"]')) {
-            const csvTabs = document.querySelectorAll('[data-tab="csv-disposal"], [data-tab="csv-reuse"]');
-            
-            // 移除所有標籤頁的活動狀態
-            csvTabs.forEach(t => t.classList.remove('is-active'));
-            
-            // 設置當前標籤頁為活動狀態
-            event.target.classList.add('is-active');
-            
-            // 隱藏所有CSV格式說明區塊
-            document.querySelectorAll('[data-name="csv-disposal"], [data-name="csv-reuse"]').forEach(segment => {
-                segment.style.display = 'none';
-            });
-            
-            // 顯示對應的CSV格式說明區塊
-            const targetSegment = document.querySelector(`[data-name="${event.target.getAttribute('data-tab')}"]`);
-            if (targetSegment) {
-                targetSegment.style.display = 'block';
-            }
-        }
-    });
-}
-
-/**
  * 初始化模態視窗關閉事件
  */
 function initModalCloseEvents() {
@@ -177,28 +141,12 @@ function initModalCloseEvents() {
         closeImportBtn.addEventListener('click', closeImportModal);
     }
     
-    // 幫助模態視窗關閉按鈕
-    const closeHelpBtn = document.getElementById('close-help-modal');
-    if (closeHelpBtn) {
-        closeHelpBtn.addEventListener('click', closeHelpModal);
-    }
-    
     // 點擊匯入模態視窗外部關閉
     const importModal = document.getElementById('import-csv-modal');
     if (importModal) {
         importModal.addEventListener('click', function(e) {
             if (e.target === this) {
                 closeImportModal();
-            }
-        });
-    }
-    
-    // 點擊幫助模態視窗外部關閉
-    const helpModal = document.getElementById('help-modal');
-    if (helpModal) {
-        helpModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeHelpModal();
             }
         });
     }
@@ -211,6 +159,9 @@ function initSelectAllCheckbox() {
     const selectAllCheckbox = document.getElementById('select-all-manifests');
     if (!selectAllCheckbox) return;
     
+    // 儲存所有選中的聯單
+    let selectedManifests = new Set();
+    
     // 更新批量刪除按鈕狀態函數
     function updateBatchDeleteButton() {
         const batchDeleteBtn = document.getElementById('batch-delete-btn');
@@ -218,8 +169,10 @@ function initSelectAllCheckbox() {
         
         if (selectedManifests.size > 0) {
             batchDeleteBtn.classList.remove('is-disabled');
+            batchDeleteBtn.disabled = false;
         } else {
             batchDeleteBtn.classList.add('is-disabled');
+            batchDeleteBtn.disabled = true;
         }
     }
     
@@ -318,7 +271,12 @@ function initSelectAllCheckbox() {
             if (selectedManifests.size === 0) return;
             
             if (confirm(`確定要移除 ${selectedManifests.size} 筆選取的聯單嗎？`)) {
-                deleteSelectedManifests();
+                const manifestsToDelete = Array.from(selectedManifests).map(key => {
+                    const [type, manifestId, wasteId] = key.split('|');
+                    return { type, manifestId, wasteId };
+                });
+                
+                deleteSelectedManifests(manifestsToDelete);
             }
         });
     }
@@ -326,14 +284,9 @@ function initSelectAllCheckbox() {
 
 /**
  * 刪除選取的聯單
+ * @param {Array} manifestsToDelete - 要刪除的聯單陣列
  */
-function deleteSelectedManifests() {
-    // 收集要刪除的聯單ID
-    const manifestsToDelete = Array.from(selectedManifests).map(key => {
-        const [type, manifestId, wasteId] = key.split('|');
-        return { type, manifestId, wasteId };
-    });
-    
+function deleteSelectedManifests(manifestsToDelete) {
     // 發送AJAX請求到後端執行刪除操作
     fetch('/transport/delete_manifests/', {
         method: 'POST',
@@ -347,33 +300,6 @@ function deleteSelectedManifests() {
     .then(data => {
         if (data.success) {
             showNotification(`已成功移除 ${data.deleted_count} 筆聯單`, 'positive');
-            
-            // 從UI中移除已刪除的聯單
-            manifestsToDelete.forEach(manifest => {
-                const card = document.querySelector(`.manifest-card[data-type="${manifest.type}"][data-manifest-id="${manifest.manifestId}"][data-waste-id="${manifest.wasteId}"]`);
-                if (card) {
-                    card.remove();
-                }
-            });
-            
-            // 清空選取
-            selectedManifests.clear();
-            
-            // 重置全選框和所有勾選框
-            const selectAllCheckbox = document.getElementById('select-all-manifests');
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = false;
-            }
-            
-            document.querySelectorAll('.manifest-checkbox').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-            
-            // 更新批量刪除按鈕狀態
-            const batchDeleteBtn = document.getElementById('batch-delete-btn');
-            if (batchDeleteBtn) {
-                batchDeleteBtn.classList.add('is-disabled');
-            }
             
             // 刪除後重新載入頁面以更新統計資訊
             setTimeout(() => {
@@ -541,11 +467,14 @@ function openImportModal() {
     // 重置進度條
     resetProgressBar();
     
-    // 重置匯入資料
-    importSessionData = null;
+    // 重置匯入相關變數
     isImporting = false;
+    currentConflictIndex = 0;
+    csvData = null;
+    importResults = { success: 0, skipped: 0, failed: [], total: 0 };
+    allConflicts = [];
     applyToAll = false;
-    currentConflictResolution = 'skip';
+    currentResolution = '';
     
     // 重置提交按鈕
     const submitBtn = document.getElementById('import-submit-btn');
@@ -580,50 +509,8 @@ function closeImportModal() {
     modal.style.display = 'none';
     document.body.style.overflow = ''; // 恢復背景滾動
     
-    // 停止進度條更新
-    if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-    }
-    
     // 重置匯入狀態
     isImporting = false;
-}
-
-/**
- * 取消解決衝突
- */
-function cancelResolve() {
-    // 返回表單區塊
-    document.getElementById('import-form-container').style.display = 'block';
-    document.getElementById('import-conflict-container').style.display = 'none';
-}
-
-/**
- * 打開使用說明模態視窗
- */
-function openHelpModal() {
-    const modal = document.getElementById('help-modal');
-    if (!modal) {
-        console.error('找不到使用說明模態視窗元素');
-        return;
-    }
-    
-    // 顯示模態視窗
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden'; // 防止背景滾動
-}
-
-/**
- * 關閉使用說明模態視窗
- */
-function closeHelpModal() {
-    const modal = document.getElementById('help-modal');
-    if (!modal) return;
-    
-    // 隱藏模態視窗
-    modal.style.display = 'none';
-    document.body.style.overflow = ''; // 恢復背景滾動
 }
 
 /**
@@ -640,50 +527,22 @@ function resetProgressBar() {
     if (progressText) {
         progressText.textContent = '準備中...';
     }
-    
-    // 停止進度條更新
-    if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-    }
 }
 
 /**
- * 啟動模擬進度條
+ * 更新進度條
+ * @param {number} current - 當前處理的項目數
+ * @param {number} total - 總項目數
  */
-function startProgressBar() {
+function updateProgressBar(current, total) {
     const progressBar = document.getElementById('import-progress-bar');
     const progressText = document.getElementById('import-progress-text');
     
     if (!progressBar || !progressText) return;
     
-    let progress = 0;
-    
-    // 重置進度條
-    resetProgressBar();
-    
-    // 每100毫秒更新進度，直到達到95%
-    progressInterval = setInterval(() => {
-        if (progress >= 95) {
-            clearInterval(progressInterval);
-            return;
-        }
-        
-        // 進度增加速度隨進度增加而減慢
-        if (progress < 30) {
-            progress += 1.5;
-        } else if (progress < 60) {
-            progress += 0.8;
-        } else if (progress < 80) {
-            progress += 0.3;
-        } else {
-            progress += 0.1;
-        }
-        
-        // 更新進度條
-        progressBar.style.width = `${progress}%`;
-        progressText.textContent = `處理中... ${Math.floor(progress)}%`;
-    }, 100);
+    const percentage = Math.min(Math.floor((current / total) * 100), 100);
+    progressBar.style.width = `${percentage}%`;
+    progressText.textContent = `處理中... ${percentage}% (${current}/${total})`;
 }
 
 /**
@@ -695,13 +554,6 @@ function completeProgressBar() {
     
     if (!progressBar || !progressText) return;
     
-    // 停止進度條更新
-    if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-    }
-    
-    // 設置進度條為100%
     progressBar.style.width = '100%';
     progressText.textContent = '完成！100%';
 }
@@ -723,14 +575,8 @@ function submitImport() {
         return;
     }
     
-    // 獲取CSRF令牌
-    const csrfToken = getCookie('csrftoken');
-    if (!csrfToken) {
-        showNotification('無法獲取CSRF令牌，請重新整理頁面', 'negative');
-        return;
-    }
-    
-    const formData = new FormData(form);
+    const file = fileInput.files[0];
+    const importType = form.querySelector('select[name="import_type"]').value;
     
     // 設置匯入狀態
     isImporting = true;
@@ -739,527 +585,620 @@ function submitImport() {
     document.getElementById('import-form-container').style.display = 'none';
     document.getElementById('import-progress-container').style.display = 'block';
     
-    // 啟動進度條
-    startProgressBar();
+    // 重置進度條
+    resetProgressBar();
     
-    // 發送AJAX請求
-    fetch('/transport/import/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': csrfToken
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`網路錯誤: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // 完成進度條
-        completeProgressBar();
+    // 讀取CSV文件
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        csvData = e.target.result;
         
-        // 設置匯入狀態
+        // 解析CSV數據
+        parseCSV(csvData, importType);
+    };
+    
+    reader.onerror = function() {
+        showNotification('讀取CSV檔案失敗', 'negative');
         isImporting = false;
-        
-        if (data.success) {
-            // 匯入成功
-            document.getElementById('import-progress-container').style.display = 'none';
-            document.getElementById('import-result-container').style.display = 'block';
-            
-            // 顯示結果
-            document.getElementById('import-result-container').innerHTML = `
-                <div class="ts-notice is-positive">
-                    <div class="content">
-                        <div class="header">匯入成功</div>
-                        <div class="description">${data.message || '已成功匯入資料'}</div>
-                    </div>
-                </div>
-                <div class="ts-statistic has-top-spaced">
-                    <div class="value">${data.imported}</div>
-                    <div class="label">成功匯入筆數</div>
-                </div>
-                <div class="ts-statistic">
-                    <div class="value">${data.skipped}</div>
-                    <div class="label">略過筆數</div>
-                </div>
-                <div class="ts-statistic">
-                    <div class="value">${data.total}</div>
-                    <div class="label">總筆數</div>
-                </div>
-                
-                <div class="ts-grid is-relaxed has-top-spaced-large">
-                    <div class="column is-12-wide">
-                        <button class="ts-button is-fluid is-primary" onclick="closeImportModal()">完成</button>
-                    </div>
-                </div>
-            `;
-            
-            // 2秒後重新載入頁面以顯示新資料
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
-        } else if (data.conflict) {
-            // 有衝突，顯示衝突解決對話框
-            importSessionData = data.import_data;
-            
-            document.getElementById('import-progress-container').style.display = 'none';
-            document.getElementById('import-conflict-container').style.display = 'block';
-            
-            // 設置衝突記錄
-            const recordsContainer = document.getElementById('conflict-records-container');
-            if (recordsContainer) {
-                // 構建衝突記錄HTML
-                let html = `<p>以下 ${data.conflicting_records.length} 筆記錄與現有資料發生衝突：</p>`;
-                
-                data.conflicting_records.forEach((record, index) => {
-                    html += `
-                        <div class="ts-box has-top-spaced conflict-record" data-index="${index}">
-                            <div class="ts-content">
-                                <div class="ts-header is-heavy">${index + 1}. 聯單編號: ${record.manifest_id} (廢棄物ID: ${record.waste_id})</div>
-                                <div class="ts-text">事業機構名稱: ${record.company_name}</div>
-                                <div class="ts-text has-bottom-spaced-small">申報日期: ${record.report_date}</div>
-                                
-                                <table class="conflict-table">
-                                    <thead>
-                                        <tr>
-                                            <th>欄位名稱</th>
-                                            <th>現有資料</th>
-                                            <th>匯入資料</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                    `;
-                    
-                    // 對比現有資料和新資料
-                    const allFields = new Set([
-                        ...Object.keys(record.existing_data || {}),
-                        ...Object.keys(record.new_data || {})
-                    ]);
-                    
-                    for (const field of allFields) {
-                        const existingValue = (record.existing_data && record.existing_data[field]) || '-';
-                        const newValue = (record.new_data && record.new_data[field]) || '-';
-                        const isDifferent = existingValue !== newValue && existingValue !== '-' && newValue !== '-';
-                        
-                        html += `
-                            <tr>
-                                <td>${field}</td>
-                                <td ${isDifferent ? 'class="different-value"' : ''}>${existingValue}</td>
-                                <td ${isDifferent ? 'class="different-value"' : ''}>${newValue}</td>
-                            </tr>
-                        `;
-                    }
-                    
-                    html += `
-                                    </tbody>
-                                </table>
-                                
-                                <div class="conflict-resolution-container" id="resolution-container-${index}">
-                                    <div class="conflict-resolution-title">選擇處理方式：</div>
-                                    <div class="conflict-resolution-options">
-                                        <div class="conflict-resolution-option">
-                                            <input type="radio" name="conflict_resolution_${index}" value="skip" id="resolution-skip-${index}" checked>
-                                            <label for="resolution-skip-${index}">略過</label>
-                                        </div>
-                                        <div class="conflict-resolution-description">保留資料庫中的現有資料，放棄匯入的新資料。</div>
-                                        
-                                        <div class="conflict-resolution-option">
-                                            <input type="radio" name="conflict_resolution_${index}" value="replace" id="resolution-replace-${index}">
-                                            <label for="resolution-replace-${index}">覆蓋</label>
-                                        </div>
-                                        <div class="conflict-resolution-description">覆蓋資料庫中的現有資料，使用匯入的新資料。</div>
-                                        
-                                        <div class="conflict-resolution-option">
-                                            <input type="radio" name="conflict_resolution_${index}" value="cancel" id="resolution-cancel-${index}">
-                                            <label for="resolution-cancel-${index}">取消</label>
-                                        </div>
-                                        <div class="conflict-resolution-description">取消整個匯入過程。</div>
-                                    </div>
-                                    
-                                    <div class="apply-to-all-checkbox">
-                                        <div class="ts-checkbox">
-                                            <input type="checkbox" id="apply-to-all-${index}" class="apply-to-all" data-index="${index}">
-                                            <label for="apply-to-all-${index}">套用到所有衝突</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="ts-grid is-relaxed has-top-spaced">
-                                    <div class="column is-6-wide">
-                                        <button class="ts-button is-fluid" onclick="processNextConflict(${index}, 'prev')">上一筆</button>
-                                    </div>
-                                    <div class="column is-6-wide">
-                                        <button class="ts-button is-fluid is-primary" onclick="processNextConflict(${index}, 'next')">下一筆</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                // 添加底部操作按鈕
-                html += `
-                    <div class="ts-grid is-relaxed has-top-spaced-large">
-                        <div class="column is-6-wide">
-                            <button class="ts-button is-fluid" onclick="cancelResolve()">取消</button>
-                        </div>
-                        <div class="column is-6-wide">
-                            <button class="ts-button is-fluid is-primary" onclick="resolveConflicts()">完成處理</button>
-                        </div>
-                    </div>
-                `;
-                
-                recordsContainer.innerHTML = html;
-                
-                // 隱藏除了第一個以外的所有衝突記錄
-                const conflictRecords = document.querySelectorAll('.conflict-record');
-                if (conflictRecords.length > 0) {
-                    conflictRecords.forEach((record, index) => {
-                        if (index > 0) {
-                            record.style.display = 'none';
-                        }
-                    });
-                }
-                
-                // 初始化 "套用到所有" 複選框處理
-                document.querySelectorAll('.apply-to-all').forEach(checkbox => {
-                    checkbox.addEventListener('change', function() {
-                        if (this.checked) {
-                            const index = this.getAttribute('data-index');
-                            const selectedResolution = document.querySelector(`input[name="conflict_resolution_${index}"]:checked`).value;
-                            
-                            // 設置全局變數
-                            applyToAll = true;
-                            currentConflictResolution = selectedResolution;
-                            
-                            // 更新所有其他衝突的選擇
-                            document.querySelectorAll(`[name^="conflict_resolution_"]`).forEach(radio => {
-                                if (radio.value === selectedResolution) {
-                                    radio.checked = true;
-                                }
-                            });
-                            
-                            // 勾選所有 "套用到所有" 複選框
-                            document.querySelectorAll('.apply-to-all').forEach(cb => {
-                                cb.checked = true;
-                            });
-                            
-                            showNotification(`已設定所有衝突都使用：${getResolutionDisplayName(selectedResolution)}`, 'info');
-                        }
-                    });
-                });
-                
-                // 監聽單選按鈕變更
-                document.addEventListener('change', function(e) {
-                    if (e.target.name && e.target.name.startsWith('conflict_resolution_')) {
-                        const index = e.target.name.split('_')[2];
-                        const applyToAllCheckbox = document.getElementById(`apply-to-all-${index}`);
-                        
-                        if (applyToAllCheckbox && applyToAllCheckbox.checked) {
-                            // 更新所有複選框，使用當前選擇的解決方案
-                            currentConflictResolution = e.target.value;
-                            
-                            document.querySelectorAll(`[name^="conflict_resolution_"]`).forEach(radio => {
-                                if (radio.value === currentConflictResolution) {
-                                    radio.checked = true;
-                                }
-                            });
-                        }
-                    }
-                });
-            }
-        } else {
-            // 其他錯誤
-            document.getElementById('import-progress-container').style.display = 'none';
-            document.getElementById('import-result-container').style.display = 'block';
-            
-            // 顯示錯誤結果
-            document.getElementById('import-result-container').innerHTML = `
-                <div class="ts-notice is-negative">
-                    <div class="content">
-                        <div class="header">匯入失敗</div>
-                        <div class="description">${data.error || '匯入過程中發生錯誤'}</div>
-                    </div>
-                </div>
-                <div class="ts-grid is-relaxed has-top-spaced-large">
-                    <div class="column is-12-wide">
-                        <button class="ts-button is-fluid" onclick="closeImportModal()">關閉</button>
-                    </div>
-                </div>
-            `;
-        }
-    })
-    .catch(error => {
-        console.error('匯入失敗:', error);
-        
-        // 設置匯入狀態
-        isImporting = false;
-        
-        // 顯示錯誤結果
         document.getElementById('import-progress-container').style.display = 'none';
-        document.getElementById('import-result-container').style.display = 'block';
-        
-        // 顯示錯誤結果
-        document.getElementById('import-result-container').innerHTML = `
-            <div class="ts-notice is-negative">
-                <div class="content">
-                    <div class="header">匯入失敗</div>
-                    <div class="description">匯入過程中發生錯誤: ${error.message}</div>
-                </div>
-            </div>
-            <div class="ts-grid is-relaxed has-top-spaced-large">
-                <div class="column is-12-wide">
-                    <button class="ts-button is-fluid" onclick="closeImportModal()">關閉</button>
-                </div>
-            </div>
-        `;
-    });
+        document.getElementById('import-form-container').style.display = 'block';
+    };
+    
+    reader.readAsText(file);
 }
 
 /**
- * 處理下一個或上一個衝突
- * @param {number} currentIndex - 當前衝突索引
- * @param {string} direction - 方向 ('next' | 'prev')
+ * 解析CSV數據
+ * @param {string} csvData - CSV字符串
+ * @param {string} importType - 匯入類型 (disposal|reuse)
  */
-function processNextConflict(currentIndex, direction) {
-    const conflictRecords = document.querySelectorAll('.conflict-record');
-    const totalConflicts = conflictRecords.length;
+function parseCSV(csvData, importType) {
+    // 分割行
+    const lines = csvData.split(/\r\n|\n/);
     
-    if (totalConflicts === 0) return;
-    
-    // 隱藏當前衝突
-    conflictRecords[currentIndex].style.display = 'none';
-    
-    // 計算下一個或上一個衝突的索引
-    let nextIndex;
-    if (direction === 'next') {
-        nextIndex = currentIndex + 1;
-        if (nextIndex >= totalConflicts) {
-            // 如果是最後一個，直接呼叫解決衝突函數
-            resolveConflicts();
-            return;
-        }
-    } else {
-        nextIndex = currentIndex - 1;
-        if (nextIndex < 0) {
-            nextIndex = 0; // 如果已經是第一個，維持在第一個
-        }
-    }
-    
-    // 顯示下一個或上一個衝突
-    conflictRecords[nextIndex].style.display = 'block';
-    
-    // 如果有啟用「套用到所有」選項，則更新下一個衝突的選擇
-    if (applyToAll) {
-        const radios = document.querySelectorAll(`input[name="conflict_resolution_${nextIndex}"]`);
-        radios.forEach(radio => {
-            radio.checked = (radio.value === currentConflictResolution);
-        });
-        
-        // 勾選「套用到所有」複選框
-        const applyToAllCheckbox = document.getElementById(`apply-to-all-${nextIndex}`);
-        if (applyToAllCheckbox) {
-            applyToAllCheckbox.checked = true;
-        }
-    }
-}
-
-/**
- * 取得衝突解決方式的顯示名稱
- * @param {string} resolution - 解決方式代碼
- * @returns {string} - 顯示名稱
- */
-function getResolutionDisplayName(resolution) {
-    switch(resolution) {
-        case 'skip':
-            return '略過';
-        case 'replace':
-            return '覆蓋';
-        case 'cancel':
-            return '取消';
-        default:
-            return resolution;
-    }
-}
-
-/**
- * 解決衝突並繼續匯入
- */
-function resolveConflicts() {
-    if (!importSessionData) {
-        document.getElementById('import-conflict-container').style.display = 'none';
+    // 至少需要標題行和一行數據
+    if (lines.length < 2) {
+        showNotification('CSV檔案格式無效或沒有數據', 'negative');
+        isImporting = false;
+        document.getElementById('import-progress-container').style.display = 'none';
         document.getElementById('import-form-container').style.display = 'block';
         return;
     }
     
-    // 如果啟用了「套用到所有」，則使用當前的解決方案
-    if (applyToAll) {
-        // 準備請求資料
-        const requestData = {
-            ...importSessionData,
-            conflict_resolution: currentConflictResolution,
-            apply_to_all: true
-        };
+    // 分析標題行
+    const headers = parseCSVLine(lines[0]);
+    
+    // 檢查必要的欄位
+    const requiredFields = ['聯單編號', '廢棄物ID'];
+    const missingFields = requiredFields.filter(field => !headers.includes(field));
+    
+    if (missingFields.length > 0) {
+        showNotification(`CSV檔案缺少必要欄位: ${missingFields.join(', ')}`, 'negative');
+        isImporting = false;
+        document.getElementById('import-progress-container').style.display = 'none';
+        document.getElementById('import-form-container').style.display = 'block';
+        return;
+    }
+    
+    // 檢查匯入類型
+    if (importType === 'disposal' && !headers.includes('廢棄物代碼')) {
+        showNotification('清除單必須包含「廢棄物代碼」欄位', 'negative');
+        isImporting = false;
+        document.getElementById('import-progress-container').style.display = 'none';
+        document.getElementById('import-form-container').style.display = 'block';
+        return;
+    }
+    
+    if (importType === 'reuse' && !headers.includes('物質代碼')) {
+        showNotification('再利用單必須包含「物質代碼」欄位', 'negative');
+        isImporting = false;
+        document.getElementById('import-progress-container').style.display = 'none';
+        document.getElementById('import-form-container').style.display = 'block';
+        return;
+    }
+    
+    // 解析數據行
+    const dataRows = [];
+    for (let i = 1; i < lines.length; i++) {
+        if (lines[i].trim() === '') continue;
         
-        submitResolution(requestData);
-        return;
-    }
-    
-    // 檢查是否有任何衝突被標記為「取消」
-    const cancelResolutions = document.querySelectorAll('input[value="cancel"]:checked');
-    if (cancelResolutions.length > 0) {
-        if (confirm('有衝突被標記為「取消」，這將取消整個匯入過程。確定要繼續嗎？')) {
-            // 準備請求資料
-            const requestData = {
-                ...importSessionData,
-                conflict_resolution: 'cancel',
-                apply_to_all: true
-            };
-            
-            submitResolution(requestData);
+        const rowData = parseCSVLine(lines[i]);
+        const row = {};
+        
+        for (let j = 0; j < headers.length; j++) {
+            row[headers[j]] = rowData[j] || '';
         }
-        return;
+        
+        dataRows.push(row);
     }
     
-    // 獲取所有衝突的解決方式
-    let conflictResolutions = [];
-    const conflictRecords = document.querySelectorAll('.conflict-record');
-    
-    conflictRecords.forEach((record, index) => {
-        const resolution = document.querySelector(`input[name="conflict_resolution_${index}"]:checked`).value;
-        conflictResolutions.push(resolution);
-    });
-    
-    // 如果所有衝突都使用相同的解決方式，則設置為套用到所有
-    const allSameResolution = conflictResolutions.every(r => r === conflictResolutions[0]);
-    
-    // 準備請求資料
-    const requestData = {
-        ...importSessionData,
-        conflict_resolution: allSameResolution ? conflictResolutions[0] : 'skip',
-        apply_to_all: allSameResolution
-    };
-    
-    submitResolution(requestData);
+    // 開始處理數據
+    importResults.total = dataRows.length;
+    processImportRows(dataRows, importType, 0);
 }
 
 /**
- * 提交衝突解決結果
- * @param {Object} requestData - 請求資料
+ * 解析CSV行數據
+ * @param {string} line - CSV行
+ * @returns {Array} 分割後的數據
  */
-function submitResolution(requestData) {
-    // 設置匯入狀態
-    isImporting = true;
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
     
-    // 顯示進度區塊
-    document.getElementById('import-conflict-container').style.display = 'none';
-    document.getElementById('import-progress-container').style.display = 'block';
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
     
-    // 啟動進度條
-    startProgressBar();
+    result.push(current);
+    return result;
+}
+
+/**
+ * 處理匯入行數據
+ * @param {Array} rows - 數據行
+ * @param {string} importType - 匯入類型
+ * @param {number} currentIndex - 當前處理的索引
+ */
+function processImportRows(rows, importType, currentIndex) {
+    // 如果已處理完所有行，顯示結果
+    if (currentIndex >= rows.length) {
+        completeProgressBar();
+        showImportResults();
+        return;
+    }
     
-    // 發送AJAX請求
-    fetch('/transport/resolve_conflicts/', {
+    // 更新進度條
+    updateProgressBar(currentIndex + 1, rows.length);
+    
+    // 獲取當前行數據
+    const row = rows[currentIndex];
+    
+    // 檢查必要欄位
+    if (!row['聯單編號'] || !row['廢棄物ID']) {
+        importResults.failed.push({
+            row: currentIndex + 1,
+            reason: '缺少必要欄位: 聯單編號或廢棄物ID'
+        });
+        
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+        return;
+    }
+    
+    // 檢查匯入類型與數據類型是否匹配
+    if (importType === 'disposal' && !row['廢棄物代碼']) {
+        importResults.failed.push({
+            row: currentIndex + 1,
+            reason: '清除單必須包含廢棄物代碼'
+        });
+        
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+        return;
+    }
+    
+    if (importType === 'reuse' && !row['物質代碼']) {
+        importResults.failed.push({
+            row: currentIndex + 1,
+            reason: '再利用單必須包含物質代碼'
+        });
+        
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+        return;
+    }
+    
+    // 發送請求檢查是否存在衝突
+    fetch('/transport/check_manifest_conflict/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify({
+            manifest_id: row['聯單編號'],
+            waste_id: row['廢棄物ID'],
+            import_type: importType
+        })
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('網路錯誤');
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        // 完成進度條
-        completeProgressBar();
-        
-        // 設置匯入狀態
-        isImporting = false;
-        
-        // 顯示結果區塊
-        document.getElementById('import-progress-container').style.display = 'none';
-        document.getElementById('import-result-container').style.display = 'block';
-        
-        if (data.success) {
-            // 處理成功
-            document.getElementById('import-result-container').innerHTML = `
-                <div class="ts-notice is-positive">
-                    <div class="content">
-                        <div class="header">衝突解決成功</div>
-                        <div class="description">${data.message || '已成功處理衝突並匯入資料'}</div>
-                    </div>
-                </div>
-                <div class="ts-statistic has-top-spaced">
-                    <div class="value">${data.imported}</div>
-                    <div class="label">成功匯入筆數</div>
-                </div>
-                <div class="ts-statistic">
-                    <div class="value">${data.skipped}</div>
-                    <div class="label">略過筆數</div>
-                </div>
-                <div class="ts-statistic">
-                    <div class="value">${data.total}</div>
-                    <div class="label">總筆數</div>
-                </div>
-                
-                <div class="ts-grid is-relaxed has-top-spaced-large">
-                    <div class="column is-12-wide">
-                        <button class="ts-button is-fluid is-primary" onclick="closeImportModal()">完成</button>
-                    </div>
-                </div>
-            `;
-            
-            // 2秒後重新載入頁面以顯示新資料
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+        if (data.conflict) {
+            // 有衝突
+            if (applyToAll) {
+                // 如果已設置套用到所有，直接使用設定的解決方式
+                handleConflictResolution(rows, importType, currentIndex, row, data.existing_data, currentResolution);
+            } else {
+                // 顯示衝突解決對話框
+                showConflictDialog(rows, importType, currentIndex, row, data.existing_data);
+            }
         } else {
-            // 處理失敗
-            document.getElementById('import-result-container').innerHTML = `
-                <div class="ts-notice is-negative">
-                    <div class="content">
-                        <div class="header">衝突解決失敗</div>
-                        <div class="description">${data.error || '處理衝突時發生錯誤'}</div>
-                    </div>
-                </div>
-                <div class="ts-grid is-relaxed has-top-spaced-large">
-                    <div class="column is-12-wide">
-                        <button class="ts-button is-fluid" onclick="closeImportModal()">關閉</button>
-                    </div>
-                </div>
-            `;
+            // 無衝突，直接匯入
+            importManifest(rows, importType, currentIndex, row);
         }
     })
     .catch(error => {
-        console.error('處理衝突失敗:', error);
+        console.error('檢查衝突失敗:', error);
         
-        // 設置匯入狀態
-        isImporting = false;
+        importResults.failed.push({
+            row: currentIndex + 1,
+            reason: '檢查衝突失敗: ' + error.message
+        });
         
-        // 顯示錯誤結果
-        document.getElementById('import-progress-container').style.display = 'none';
-        document.getElementById('import-result-container').style.display = 'block';
-        
-        document.getElementById('import-result-container').innerHTML = `
-            <div class="ts-notice is-negative">
-                <div class="content">
-                    <div class="header">衝突解決失敗</div>
-                    <div class="description">處理衝突時發生錯誤: ${error.message}</div>
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+    });
+}
+
+/**
+ * 顯示衝突解決對話框
+ * @param {Array} rows - 數據行
+ * @param {string} importType - 匯入類型
+ * @param {number} currentIndex - 當前處理的索引
+ * @param {Object} newData - 新數據
+ * @param {Object} existingData - 現有數據
+ */
+function showConflictDialog(rows, importType, currentIndex, newData, existingData) {
+    // 顯示衝突解決對話框
+    document.getElementById('import-progress-container').style.display = 'none';
+    document.getElementById('import-conflict-container').style.display = 'block';
+    
+    // 構建衝突記錄HTML
+    const recordsContainer = document.getElementById('conflict-records-container');
+    if (!recordsContainer) return;
+    
+    // 清空容器
+    recordsContainer.innerHTML = '';
+    
+    // 構建衝突記錄
+    const conflictHtml = `
+        <div class="ts-box has-top-spaced conflict-record">
+            <div class="ts-content">
+                <div class="ts-header is-heavy">
+                    衝突記錄 ${currentIndex + 1}/${rows.length}
                 </div>
+                
+                <div class="ts-text">聯單編號: ${newData['聯單編號']} (廢棄物ID: ${newData['廢棄物ID']})</div>
+                <div class="ts-text has-bottom-spaced-small">事業機構名稱: ${newData['事業機構名稱'] || existingData['事業機構名稱'] || '-'}</div>
+                
+                <div class="conflict-resolution-container">
+                    <div class="conflict-resolution-title">選擇處理方式：</div>
+                    <div class="conflict-resolution-options">
+                        <div class="conflict-resolution-option">
+                            <input type="radio" name="conflict_resolution" value="skip" id="resolution-skip" checked>
+                            <label for="resolution-skip">略過</label>
+                        </div>
+                        <div class="conflict-resolution-description">保留資料庫中的現有資料，放棄匯入的新資料。</div>
+                        
+                        <div class="conflict-resolution-option">
+                            <input type="radio" name="conflict_resolution" value="replace" id="resolution-replace">
+                            <label for="resolution-replace">覆蓋</label>
+                        </div>
+                        <div class="conflict-resolution-description">覆蓋資料庫中的現有資料，使用匯入的新資料。</div>
+                        
+                        <div class="conflict-resolution-option">
+                            <input type="radio" name="conflict_resolution" value="cancel" id="resolution-cancel">
+                            <label for="resolution-cancel">取消</label>
+                        </div>
+                        <div class="conflict-resolution-description">取消整個匯入過程。</div>
+                    </div>
+                    
+                    <div class="apply-to-all-checkbox">
+                        <div class="ts-checkbox">
+                            <input type="checkbox" id="apply-to-all">
+                            <label for="apply-to-all">套用到所有衝突</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="ts-grid is-relaxed has-top-spaced-large">
+                    <div class="column is-8-wide">
+                        <button class="ts-button is-fluid" onclick="cancelImport()">取消匯入</button>
+                    </div>
+                    <div class="column is-8-wide">
+                        <button class="ts-button is-fluid is-primary" onclick="resolveConflict('${importType}', ${currentIndex})">確認</button>
+                    </div>
+                </div>
+                <div class="ts-divider has-top-spaced"></div>
+                
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-fluid">
+                        <div class="ts-header">資料比較</div>
+                    </div>
+                </div>
+                
+                <table class="conflict-table">
+                    <thead>
+                        <tr>
+                            <th width="25%">欄位名稱</th>
+                            <th width="37.5%">現有資料</th>
+                            <th width="37.5%">匯入資料</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${generateComparisonTableRows(newData, existingData)}
+                    </tbody>
+                </table>
             </div>
-            <div class="ts-grid is-relaxed has-top-spaced-large">
-                <div class="column is-12-wide">
-                    <button class="ts-button is-fluid" onclick="closeImportModal()">關閉</button>
-                </div>
+        </div>
+    `;
+    
+    recordsContainer.innerHTML = conflictHtml;
+    
+    // 初始化套用到所有複選框事件
+    document.getElementById('apply-to-all').addEventListener('change', function() {
+        applyToAll = this.checked;
+    });
+}
+
+/**
+ * 生成比較表格行
+ * @param {Object} newData - 新數據
+ * @param {Object} existingData - 現有數據
+ * @returns {string} HTML字符串
+ */
+function generateComparisonTableRows(newData, existingData) {
+    let html = '';
+    
+    // 合併所有欄位
+    const allFields = new Set([
+        ...Object.keys(newData),
+        ...Object.keys(existingData)
+    ]);
+    
+    // 生成表格行
+    for (const field of allFields) {
+        const existingValue = existingData[field] !== undefined ? existingData[field] : '-';
+        const newValue = newData[field] !== undefined ? newData[field] : '-';
+        const isDifferent = existingValue !== newValue && existingValue !== '-' && newValue !== '-';
+        
+        html += `
+            <tr>
+                <td>${field}</td>
+                <td ${isDifferent ? 'class="different-value"' : ''}>${existingValue}</td>
+                <td ${isDifferent ? 'class="different-value"' : ''}>${newValue}</td>
+            </tr>
+        `;
+    }
+    
+    return html;
+}
+
+/**
+ * 解決衝突
+ * @param {string} importType - 匯入類型
+ * @param {number} currentIndex - 當前處理的索引
+ */
+function resolveConflict(importType, currentIndex) {
+    const resolution = document.querySelector('input[name="conflict_resolution"]:checked').value;
+    currentResolution = resolution;
+    
+    // 如果選擇取消整個匯入過程
+    if (resolution === 'cancel') {
+        cancelImport();
+        return;
+    }
+    
+    // 獲取所有行數據
+    const rows = parseCsvDataToRows();
+    
+    // 獲取當前行數據
+    const row = rows[currentIndex];
+    
+    // 獲取現有數據
+    fetch('/transport/get_manifest/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            manifest_id: row['聯單編號'],
+            waste_id: row['廢棄物ID'],
+            import_type: importType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 處理衝突解決
+        handleConflictResolution(rows, importType, currentIndex, row, data, resolution);
+    })
+    .catch(error => {
+        console.error('獲取現有數據失敗:', error);
+        
+        importResults.failed.push({
+            row: currentIndex + 1,
+            reason: '獲取現有數據失敗: ' + error.message
+        });
+        
+        // 繼續顯示進度條
+        document.getElementById('import-conflict-container').style.display = 'none';
+        document.getElementById('import-progress-container').style.display = 'block';
+        
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+    });
+}
+
+/**
+ * 處理衝突解決
+ * @param {Array} rows - 所有數據行
+ * @param {string} importType - 匯入類型
+ * @param {number} currentIndex - 當前處理的索引
+ * @param {Object} row - 當前行數據
+ * @param {Object} existingData - 現有數據
+ * @param {string} resolution - 解決方式
+ */
+function handleConflictResolution(rows, importType, currentIndex, row, existingData, resolution) {
+    // 顯示進度條
+    document.getElementById('import-conflict-container').style.display = 'none';
+    document.getElementById('import-progress-container').style.display = 'block';
+    
+    switch (resolution) {
+        case 'skip':
+            importResults.skipped++;
+            // 處理下一行
+            processImportRows(rows, importType, currentIndex + 1);
+            break;
+        
+        case 'replace':
+            // 覆蓋現有數據
+            importManifest(rows, importType, currentIndex, row, true);
+            break;
+        
+        case 'cancel':
+            cancelImport();
+            break;
+    }
+}
+
+/**
+ * 將CSV數據解析為行數據
+ * @returns {Array} 行數據陣列
+ */
+function parseCsvDataToRows() {
+    if (!csvData) return [];
+    
+    // 分割行
+    const lines = csvData.split(/\r\n|\n/);
+    
+    // 如果只有標題行或沒有數據，返回空陣列
+    if (lines.length < 2) return [];
+    
+    // 分析標題行
+    const headers = parseCSVLine(lines[0]);
+    
+    // 解析數據行
+    const dataRows = [];
+    for (let i = 1; i < lines.length; i++) {
+        if (lines[i].trim() === '') continue;
+        
+        const rowData = parseCSVLine(lines[i]);
+        const row = {};
+        
+        for (let j = 0; j < headers.length; j++) {
+            row[headers[j]] = rowData[j] || '';
+        }
+        
+        dataRows.push(row);
+    }
+    
+    return dataRows;
+}
+
+/**
+ * 匯入聯單
+ * @param {Array} rows - 所有數據行
+ * @param {string} importType - 匯入類型
+ * @param {number} currentIndex - 當前處理的索引
+ * @param {Object} row - 當前行數據
+ * @param {boolean} isOverride - 是否覆蓋現有數據
+ */
+function importManifest(rows, importType, currentIndex, row, isOverride = false) {
+    fetch('/transport/import_manifest/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            import_type: importType,
+            data: row,
+            override: isOverride
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            importResults.success++;
+        } else {
+            importResults.failed.push({
+                row: currentIndex + 1,
+                reason: data.error || '匯入失敗'
+            });
+        }
+        
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+    })
+    .catch(error => {
+        console.error('匯入失敗:', error);
+        
+        importResults.failed.push({
+            row: currentIndex + 1,
+            reason: '匯入失敗: ' + error.message
+        });
+        
+        // 處理下一行
+        processImportRows(rows, importType, currentIndex + 1);
+    });
+}
+
+/**
+ * 取消匯入
+ */
+function cancelImport() {
+    // 重置匯入狀態
+    isImporting = false;
+    
+    // 顯示結果區塊
+    document.getElementById('import-conflict-container').style.display = 'none';
+    document.getElementById('import-progress-container').style.display = 'none';
+    document.getElementById('import-result-container').style.display = 'block';
+    
+    // 顯示結果
+    document.getElementById('import-result-container').innerHTML = `
+        <div class="ts-notice is-warning">
+            <div class="content">
+                <div class="header">匯入已取消</div>
+                <div class="description">您已取消匯入過程</div>
+            </div>
+        </div>
+        <div class="ts-grid is-relaxed has-top-spaced-large">
+            <div class="column is-12-wide">
+                <button class="ts-button is-fluid" onclick="closeImportModal()">關閉</button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 顯示匯入結果
+ */
+function showImportResults() {
+    // 重置匯入狀態
+    isImporting = false;
+    
+    // 顯示結果區塊
+    document.getElementById('import-progress-container').style.display = 'none';
+    document.getElementById('import-conflict-container').style.display = 'none';
+    document.getElementById('import-result-container').style.display = 'block';
+    
+    // 構建失敗詳情HTML
+    let failedDetailsHtml = '';
+    if (importResults.failed.length > 0) {
+        failedDetailsHtml = `
+            <div class="ts-header has-top-spaced">失敗詳情</div>
+            <div class="ts-list is-unordered">
+                ${importResults.failed.map(failure => `
+                    <div class="item">
+                        <div class="ts-text">第 ${failure.row} 行：${failure.reason}</div>
+                    </div>
+                `).join('')}
             </div>
         `;
-    });
+    }
+    
+    // 顯示結果
+    document.getElementById('import-result-container').innerHTML = `
+        <div class="ts-notice is-${importResults.success > 0 ? 'positive' : 'warning'}">
+            <div class="content">
+                <div class="header">${importResults.success > 0 ? '匯入成功' : '匯入完成，但有問題'}</div>
+                <div class="description">總共 ${importResults.total} 筆資料，成功 ${importResults.success} 筆，略過 ${importResults.skipped} 筆，失敗 ${importResults.failed.length} 筆</div>
+            </div>
+        </div>
+        
+        <div class="ts-wrap is-evenly-divided has-top-spaced">
+            <div class="ts-statistic">
+                <div class="value">${importResults.success}</div>
+                <div class="label">成功匯入筆數</div>
+            </div>
+            <div class="ts-statistic">
+                <div class="value">${importResults.skipped}</div>
+                <div class="label">略過筆數</div>
+            </div>
+            <div class="ts-statistic">
+                <div class="value">${importResults.failed.length}</div>
+                <div class="label">失敗筆數</div>
+            </div>
+        </div>
+        
+        ${failedDetailsHtml}
+        
+        <div class="ts-grid is-relaxed has-top-spaced-large">
+            <div class="column is-12-wide">
+                <button class="ts-button is-fluid is-primary" onclick="closeImportModal()">完成</button>
+            </div>
+        </div>
+    `;
+    
+    // 如果有成功匯入的數據，2秒後重新載入頁面
+    if (importResults.success > 0) {
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
 }
 
 /**
