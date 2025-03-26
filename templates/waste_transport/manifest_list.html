@@ -35,7 +35,7 @@
         </div>
         <div class="ts-wrap is-right-aligned has-bottom-spaced-large">
             <button id="btn-import-csv" class="ts-button is-primary is-start-icon">
-                <span class="ts-icon is-upload-icon"></span> 匯入 CSV
+                <span class="ts-icon is-file-import-icon"></span> 匯入檔案
             </button>
             <button class="ts-button is-outlined has-end-spaced-small" id="filter-toggle">
                 <span class="ts-icon is-filter-icon"></span> 篩選條件
@@ -191,7 +191,7 @@
         </div>
     </div>
     
-    <!-- Windows風格彈出視窗 - 匯入CSV -->
+<!-- Windows風格彈出視窗 - 匯入CSV -->
 <div id="import-csv-modal" class="windows-modal-overlay">
     <div class="windows-modal-window">
         <div class="windows-modal-titlebar">
@@ -208,8 +208,10 @@
                     <div class="ts-grid is-relaxed">
                         <div class="column is-8-wide">
                             <div class="ts-text is-label">CSV 檔案</div>
-                            <div class="ts-input">
+                            <div class="ts-file is-fluid">
                                 <input type="file" name="csv_file" accept=".csv">
+                                <button type="button" class="ts-button" style="display: none;">選擇檔案</button>
+                                <span class="ts-text" style="display: none;">尚未選擇檔案</span>
                             </div>
                             <div class="ts-text is-description has-top-spaced-small" id="file-feedback">
                                 請選擇要匯入的 CSV 檔案 (最大 5MB)

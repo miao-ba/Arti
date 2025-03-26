@@ -871,3 +871,53 @@
 .ts-space.is-large {
     height: 2rem;
 }
+/* 需要添加到static/css/waste_transport.css或相應的CSS文件中 */
+
+/* 突顯資料差異表格中的單元格 */
+.ts-table td.is-negative {
+    background-color: rgba(255, 82, 82, 0.1) !important;
+    color: var(--ts-negative-600) !important;
+    font-weight: bold;
+}
+
+.ts-table td.is-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+    color: var(--ts-warning-700) !important;
+    font-weight: bold;
+}
+
+/* 衝突解決按鈕樣式 */
+.conflict-resolution-container .ts-grid .column {
+    display: flex;
+    align-items: stretch;
+}
+
+.conflict-resolution-container .ts-grid .column .ts-button {
+    width: 100%;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 複選框按鈕容器 */
+.conflict-resolution-container .ts-grid .column .ts-button .ts-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* 確保選中框與其他按鈕高度一致 */
+.conflict-resolution-container .ts-grid .column .ts-button .ts-checkbox label {
+    line-height: 1.5;
+    padding: 0.375em 0;
+    display: flex;
+    align-items: center;
+}
+
+/* 整體確保元素對齊 */
+.conflict-resolution-container .ts-grid .column {
+    height: 40px;
+}

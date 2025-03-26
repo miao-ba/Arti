@@ -56,17 +56,17 @@ function initFilterToggle() {
     
     // 一開始隱藏篩選表單
     filterForm.style.display = 'none';
-    filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-icon"></span> 顯示篩選條件';
+    filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-icon"></span> 篩選';
     
     filterToggleBtn.addEventListener('click', function() {
         const isExpanded = filterForm.style.display !== 'none';
         
         if (isExpanded) {
             filterForm.style.display = 'none';
-            filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-icon"></span> 顯示篩選條件';
+            filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-icon"></span> 篩選';
         } else {
             filterForm.style.display = 'block';
-            filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-slash-icon"></span> 隱藏篩選條件';
+            filterToggleBtn.innerHTML = '<span class="ts-icon is-filter-slash-icon"></span> 篩選';
         }
     });
 }
@@ -319,11 +319,14 @@ function deleteSelectedManifests(manifestsToDelete) {
  * 初始化匯入表單的檔案選擇事件
  */
 function initFileInputHandler() {
-    const fileInput = document.querySelector('#import-csv-modal input[type="file"]');
+    // 使用TocasUI的檔案選擇器
+    const fileInputContainer = document.querySelector('#import-csv-modal .ts-file');
+    const fileInput = fileInputContainer ? fileInputContainer.querySelector('input[type="file"]') : null;
+    const fileLabel = fileInputContainer ? fileInputContainer.querySelector('.ts-text') : null;
     const feedbackElement = document.getElementById('file-feedback');
     const submitBtn = document.getElementById('import-submit-btn');
     
-    if (!fileInput || !feedbackElement || !submitBtn) return;
+    if (!fileInput || !fileLabel || !feedbackElement || !submitBtn) return;
     
     // 設置禁用狀態
     submitBtn.disabled = true;
@@ -332,16 +335,20 @@ function initFileInputHandler() {
         const file = this.files[0];
         
         if (!file) {
+            fileLabel.textContent = '尚未選擇檔案';
             feedbackElement.textContent = '請選擇CSV檔案';
             feedbackElement.className = 'ts-text is-description has-top-spaced-small';
             submitBtn.disabled = true;
             return;
         }
         
+        // 顯示所選文件名
+        fileLabel.textContent = file.name;
+        
         // 檢查檔案類型
         if (!file.name.endsWith('.csv')) {
             feedbackElement.textContent = '檔案格式錯誤，僅支援 .csv 檔案';
-            feedbackElement.className = 'ts-text is-description has-top-spaced-small color-negative';
+            feedbackElement.className = 'ts-text is-description has-top-spaced-small is-negative';
             submitBtn.disabled = true;
             return;
         }
@@ -349,14 +356,14 @@ function initFileInputHandler() {
         // 檢查檔案大小
         if (file.size > MAX_FILE_SIZE) {
             feedbackElement.textContent = `檔案大小超過限制 (最大 ${MAX_FILE_SIZE / 1024 / 1024}MB)`;
-            feedbackElement.className = 'ts-text is-description has-top-spaced-small color-negative';
+            feedbackElement.className = 'ts-text is-description has-top-spaced-small is-negative';
             submitBtn.disabled = true;
             return;
         }
         
         // 檔案有效
         feedbackElement.textContent = `已選擇: ${file.name} (${formatFileSize(file.size)})`;
-        feedbackElement.className = 'ts-text is-description has-top-spaced-small status-confirmed';
+        feedbackElement.className = 'ts-text is-description has-top-spaced-small is-positive';
         submitBtn.disabled = false;
     });
 }
@@ -462,6 +469,12 @@ function openImportModal() {
     const form = document.getElementById('csv-import-form');
     if (form) {
         form.reset();
+    }
+    
+    // 重置檔案選擇器顯示文字
+    const fileLabel = document.querySelector('#import-csv-modal .ts-file .ts-text');
+    if (fileLabel) {
+        fileLabel.textContent = '尚未選擇檔案';
     }
     
     // 重置進度條
@@ -706,6 +719,44 @@ function parseCSVLine(line) {
 }
 
 /**
+ * 檢查兩個記錄是否完全相同
+ * @param {Object} newData - 新數據
+ * @param {Object} existingData - 現有數據
+ * @returns {boolean} 是否完全相同
+ */
+function areRecordsIdentical(newData, existingData) {
+    // 忽略某些不需要比較的欄位
+    const ignoredFields = ['created_at', 'updated_at', 'id'];
+    
+    // 獲取所有欄位（合併兩個對象的所有鍵）
+    const allFields = new Set([
+        ...Object.keys(newData),
+        ...Object.keys(existingData)
+    ]);
+    
+    // 比較每個欄位的值
+    for (const field of allFields) {
+        // 忽略特定欄位
+        if (ignoredFields.includes(field)) continue;
+        
+        // 獲取欄位值
+        const newValue = (newData[field] !== undefined && newData[field] !== null) ? 
+            String(newData[field]).trim() : '';
+        const existingValue = (existingData[field] !== undefined && existingData[field] !== null) ? 
+            String(existingData[field]).trim() : '';
+        
+        // 如果任何欄位不匹配，則返回false
+        if (newValue !== existingValue) {
+            console.log(`欄位 ${field} 不匹配: 新=${newValue}, 現有=${existingValue}`);
+            return false;
+        }
+    }
+    
+    // 所有欄位都匹配，返回true
+    return true;
+}
+
+/**
  * 處理匯入行數據
  * @param {Array} rows - 數據行
  * @param {string} importType - 匯入類型
@@ -776,8 +827,14 @@ function processImportRows(rows, importType, currentIndex) {
     .then(response => response.json())
     .then(data => {
         if (data.conflict) {
-            // 有衝突
-            if (applyToAll) {
+            // 有衝突，先檢查是否完全相同
+            if (areRecordsIdentical(row, data.existing_data)) {
+                console.log(`記錄 ${currentIndex + 1} 完全相同，自動略過`);
+                importResults.skipped++;
+                
+                // 處理下一行
+                processImportRows(rows, importType, currentIndex + 1);
+            } else if (applyToAll) {
                 // 如果已設置套用到所有，直接使用設定的解決方式
                 handleConflictResolution(rows, importType, currentIndex, row, data.existing_data, currentResolution);
             } else {
@@ -822,7 +879,7 @@ function showConflictDialog(rows, importType, currentIndex, newData, existingDat
     // 清空容器
     recordsContainer.innerHTML = '';
     
-    // 構建衝突記錄
+    // 構建衝突記錄 - 使用TocasUI按鈕
     const conflictHtml = `
         <div class="ts-box has-top-spaced conflict-record">
             <div class="ts-content">
@@ -833,42 +890,34 @@ function showConflictDialog(rows, importType, currentIndex, newData, existingDat
                 <div class="ts-text">聯單編號: ${newData['聯單編號']} (廢棄物ID: ${newData['廢棄物ID']})</div>
                 <div class="ts-text has-bottom-spaced-small">事業機構名稱: ${newData['事業機構名稱'] || existingData['事業機構名稱'] || '-'}</div>
                 
-                <div class="conflict-resolution-container">
-                    <div class="conflict-resolution-title">選擇處理方式：</div>
-                    <div class="conflict-resolution-options">
-                        <div class="conflict-resolution-option">
-                            <input type="radio" name="conflict_resolution" value="skip" id="resolution-skip" checked>
-                            <label for="resolution-skip">略過</label>
+                <div class="ts-grid is-relaxed has-top-spaced" style=" display: none;">
+                    <div class="column is-3-wide">
+                        <div class="ts-button is-fluid">
+                            <div class="ts-checkbox">
+                                <input type="checkbox" id="apply-to-all" style="align-items: center;  ">
+                                <label for="apply-to-all">套用到所有衝突</label>
+                            </div>
                         </div>
-                        <div class="conflict-resolution-description">保留資料庫中的現有資料，放棄匯入的新資料。</div>
-                        
-                        <div class="conflict-resolution-option">
-                            <input type="radio" name="conflict_resolution" value="replace" id="resolution-replace">
-                            <label for="resolution-replace">覆蓋</label>
-                        </div>
-                        <div class="conflict-resolution-description">覆蓋資料庫中的現有資料，使用匯入的新資料。</div>
-                        
-                        <div class="conflict-resolution-option">
-                            <input type="radio" name="conflict_resolution" value="cancel" id="resolution-cancel">
-                            <label for="resolution-cancel">取消</label>
-                        </div>
-                        <div class="conflict-resolution-description">取消整個匯入過程。</div>
                     </div>
-                    
-                    <div class="apply-to-all-checkbox">
-                        <div class="ts-checkbox">
-                            <input type="checkbox" id="apply-to-all">
-                            <label for="apply-to-all">套用到所有衝突</label>
-                        </div>
+                    <div class="column is-3-wide">
+                        <button type="button" class="ts-button is-fluid" onclick="executeResolution('skip', '${importType}', ${currentIndex})">略過</button>
+                    </div>
+                    <div class="column is-3-wide">
+                        <button type="button" class="ts-button is-warning is-fluid" onclick="executeResolution('replace', '${importType}', ${currentIndex})">覆蓋</button>
+                    </div>
+                    <div class="column is-3-wide">
+                        <button type="button" class="ts-button is-negative is-fluid" onclick="executeResolution('cancel', '${importType}', ${currentIndex})">取消</button>
                     </div>
                 </div>
-                <div class="ts-grid is-relaxed has-top-spaced-large">
-                    <div class="column is-8-wide">
-                        <button class="ts-button is-fluid" onclick="cancelImport()">取消匯入</button>
-                    </div>
-                    <div class="column is-8-wide">
-                        <button class="ts-button is-fluid is-primary" onclick="resolveConflict('${importType}', ${currentIndex})">確認</button>
-                    </div>
+
+                <div class="ts-content is-tertiary is-middle-aligned is-head-aligned">
+                    <label class="ts-checkbox has-end-spaced">
+                        <input type="checkbox" id="applyToAll" style="border-color: gray !important;">
+                        套用到所有資料
+                    </label>
+                    <button class="ts-button is-warning" id="overrideBtn" onclick="executeResolution('replace', '${importType}', ${currentIndex})">覆寫資料內容</button>
+                    <button class="ts-button is-tertiary" id="skipBtn" class="ts-button is-fluid" onclick="executeResolution('skip', '${importType}', ${currentIndex})">略過這筆資料</button>
+                    <button class="ts-button is-negative is-critical" id="cancelBtn" onclick="executeResolution('cancel', '${importType}', ${currentIndex})">終止上傳內容</button>
                 </div>
                 <div class="ts-divider has-top-spaced"></div>
                 
@@ -878,7 +927,7 @@ function showConflictDialog(rows, importType, currentIndex, newData, existingDat
                     </div>
                 </div>
                 
-                <table class="conflict-table">
+                <table class="ts-table is-celled">
                     <thead>
                         <tr>
                             <th width="25%">欄位名稱</th>
@@ -926,8 +975,8 @@ function generateComparisonTableRows(newData, existingData) {
         html += `
             <tr>
                 <td>${field}</td>
-                <td ${isDifferent ? 'class="different-value"' : ''}>${existingValue}</td>
-                <td ${isDifferent ? 'class="different-value"' : ''}>${newValue}</td>
+                <td ${isDifferent ? 'class="is-negative"' : ''}>${existingValue}</td>
+                <td ${isDifferent ? 'class="is-warning"' : ''}>${newValue}</td>
             </tr>
         `;
     }
@@ -936,13 +985,17 @@ function generateComparisonTableRows(newData, existingData) {
 }
 
 /**
- * 解決衝突
+ * 執行所選擇的解決方式
+ * @param {string} resolution - 解決方式 (skip|replace|cancel)
  * @param {string} importType - 匯入類型
  * @param {number} currentIndex - 當前處理的索引
  */
-function resolveConflict(importType, currentIndex) {
-    const resolution = document.querySelector('input[name="conflict_resolution"]:checked').value;
+function executeResolution(resolution, importType, currentIndex) {
+    // 更新當前解析方式
     currentResolution = resolution;
+    
+    // 設置套用到所有的狀態
+    applyToAll = document.getElementById('apply-to-all').checked;
     
     // 如果選擇取消整個匯入過程
     if (resolution === 'cancel') {
@@ -956,39 +1009,19 @@ function resolveConflict(importType, currentIndex) {
     // 獲取當前行數據
     const row = rows[currentIndex];
     
-    // 獲取現有數據
-    fetch('/transport/get_manifest/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            manifest_id: row['聯單編號'],
-            waste_id: row['廢棄物ID'],
-            import_type: importType
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        // 處理衝突解決
-        handleConflictResolution(rows, importType, currentIndex, row, data, resolution);
-    })
-    .catch(error => {
-        console.error('獲取現有數據失敗:', error);
-        
-        importResults.failed.push({
-            row: currentIndex + 1,
-            reason: '獲取現有數據失敗: ' + error.message
-        });
-        
-        // 繼續顯示進度條
-        document.getElementById('import-conflict-container').style.display = 'none';
-        document.getElementById('import-progress-container').style.display = 'block';
-        
+    // 顯示進度條
+    document.getElementById('import-conflict-container').style.display = 'none';
+    document.getElementById('import-progress-container').style.display = 'block';
+    
+    // 根據選擇的解決方式處理
+    if (resolution === 'skip') {
+        importResults.skipped++;
         // 處理下一行
         processImportRows(rows, importType, currentIndex + 1);
-    });
+    } else if (resolution === 'replace') {
+        // 覆蓋現有數據
+        importManifest(rows, importType, currentIndex, row, true);
+    }
 }
 
 /**
