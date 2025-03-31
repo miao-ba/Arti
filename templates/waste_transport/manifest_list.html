@@ -4,6 +4,9 @@
 
 {% block stylesheet %}
 <link rel="stylesheet" href="{% static 'css/waste_transport.css' %}">
+<style>
+{% include "waste_transport/partials/filter_popup.css" %}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -38,74 +41,10 @@
                 <span class="ts-icon is-file-import-icon"></span> 匯入檔案
             </button>
             <button class="ts-button is-outlined has-end-spaced-small" id="filter-toggle">
-                <span class="ts-icon is-filter-icon"></span> 篩選條件
+                <span class="ts-icon is-filter-icon"></span> 篩選
             </button>
         </div>
-        <!-- 篩選條件 -->
-        <div class="ts-box has-bottom-spaced-large has-top-spaced-large" id="filter-form">
-            <div class="ts-content">
-                <div class="ts-header is-heavy">篩選條件</div>
-                <form method="get" id="manifest-filter-form" class="has-top-spaced">
-                    <div class="ts-grid is-relaxed">
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">聯單類型</div>
-                            {{ form.manifest_type }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">聯單編號</div>
-                            {{ form.manifest_id }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">事業機構名稱</div>
-                            {{ form.company_name }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">確認狀態</div>
-                            {{ form.confirmation_status }}
-                        </div>
-                    </div>
-                    <div class="ts-grid is-relaxed has-top-spaced">
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">廢棄物代碼</div>
-                            {{ form.waste_code }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">廢棄物名稱</div>
-                            {{ form.waste_name }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">申報重量高於</div>
-                            {{ form.reported_weight_above }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">申報重量低於</div>
-                            {{ form.reported_weight_below }}
-                        </div>
-                    </div>
-                    <div class="ts-grid is-relaxed has-top-spaced">
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">申報日期從</div>
-                            {{ form.report_date_from }}
-                        </div>
-                        <div class="column is-3-wide">
-                            <div class="ts-text is-label">申報日期至</div>
-                            {{ form.report_date_to }}
-                        </div>
-                        <div class="column is-6-wide">
-                            <div class="ts-wrap is-right-aligned has-top-spaced-large">
-                                <button type="button" class="ts-button is-outlined is-start-icon" onclick="clearFilterForm()">
-                                    <span class="ts-icon is-trash-can-icon"></span> 清空條件
-                                </button>
-                                <button type="submit" class="ts-button is-primary is-start-icon">
-                                    <span class="ts-icon is-search-icon"></span> 搜尋
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
+        
         <!-- 聯單列表和詳細內容 -->
         <div class="ts-grid is-relaxed">
             <!-- 左側：聯單列表 -->
@@ -191,99 +130,103 @@
         </div>
     </div>
     
-<!-- Windows風格彈出視窗 - 匯入CSV -->
-<div id="import-csv-modal" class="windows-modal-overlay">
-    <div class="windows-modal-window">
-        <div class="windows-modal-titlebar">
-            <span class="windows-modal-title">匯入 CSV 聯單資料</span>
-            <div class="windows-modal-controls">
-                <button class="windows-modal-close" id="close-import-modal">×</button>
+    <!-- 浮動式篩選視窗 -->
+    {% include "waste_transport/partials/filter_popup.html" with form=form %}
+    
+    <!-- Windows風格彈出視窗 - 匯入CSV -->
+    <div id="import-csv-modal" class="windows-modal-overlay">
+        <div class="windows-modal-window">
+            <div class="windows-modal-titlebar">
+                <span class="windows-modal-title">匯入 CSV 聯單資料</span>
+                <div class="windows-modal-controls">
+                    <button class="windows-modal-close" id="close-import-modal">×</button>
+                </div>
             </div>
-        </div>
-        <div class="windows-modal-content">
-            <!-- 步驟1: 表單區塊 -->
-            <div id="import-form-container">
-                <form id="csv-import-form" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="ts-grid is-relaxed">
-                        <div class="column is-8-wide">
-                            <div class="ts-text is-label">CSV 檔案</div>
-                            <div class="ts-file is-fluid">
-                                <input type="file" name="csv_file" accept=".csv">
-                                <button type="button" class="ts-button" style="display: none;">選擇檔案</button>
-                                <span class="ts-text" style="display: none;">尚未選擇檔案</span>
+            <div class="windows-modal-content">
+                <!-- 步驟1: 表單區塊 -->
+                <div id="import-form-container">
+                    <form id="csv-import-form" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="ts-grid is-relaxed">
+                            <div class="column is-8-wide">
+                                <div class="ts-text is-label">CSV 檔案</div>
+                                <div class="ts-file is-fluid">
+                                    <input type="file" name="csv_file" accept=".csv">
+                                    <button type="button" class="ts-button" style="display: none;">選擇檔案</button>
+                                    <span class="ts-text" style="display: none;">尚未選擇檔案</span>
+                                </div>
+                                <div class="ts-text is-description has-top-spaced-small" id="file-feedback">
+                                    請選擇要匯入的 CSV 檔案 (最大 5MB)
+                                </div>
                             </div>
-                            <div class="ts-text is-description has-top-spaced-small" id="file-feedback">
-                                請選擇要匯入的 CSV 檔案 (最大 5MB)
+                            <div class="column is-8-wide">
+                                <div class="ts-text is-label">匯入類型</div>
+                                <div class="ts-select is-fluid">
+                                    <select name="import_type">
+                                        <option value="disposal">清除單</option>
+                                        <option value="reuse">再利用單</option>
+                                    </select>
+                                </div>
+                                <div class="ts-text is-description has-top-spaced-small">
+                                    選擇要匯入的聯單類型
+                                </div>
                             </div>
                         </div>
+                    </form>
+                    
+                    <div class="ts-grid is-relaxed has-top-spaced-large">
                         <div class="column is-8-wide">
-                            <div class="ts-text is-label">匯入類型</div>
-                            <div class="ts-select is-fluid">
-                                <select name="import_type">
-                                    <option value="disposal">清除單</option>
-                                    <option value="reuse">再利用單</option>
-                                </select>
-                            </div>
-                            <div class="ts-text is-description has-top-spaced-small">
-                                選擇要匯入的聯單類型
-                            </div>
+                            <button class="ts-button is-fluid" onclick="closeImportModal()">取消</button>
+                        </div>
+                        <div class="column is-8-wide">
+                            <button id="import-submit-btn" class="ts-button is-fluid is-primary" onclick="submitImport()" disabled>匯入</button>
                         </div>
                     </div>
-                </form>
-                
-                <div class="ts-grid is-relaxed has-top-spaced-large">
-                    <div class="column is-8-wide">
-                        <button class="ts-button is-fluid" onclick="closeImportModal()">取消</button>
-                    </div>
-                    <div class="column is-8-wide">
-                        <button id="import-submit-btn" class="ts-button is-fluid is-primary" onclick="submitImport()" disabled>匯入</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 步驟2: 進度條區塊 -->
-            <div id="import-progress-container" style="display:none;">
-                <div class="ts-notice is-primary">
-                    <div class="content">
-                        <div class="header">匯入處理中</div>
-                        <div class="description">正在處理您的資料，請耐心等待...</div>
-                    </div>
                 </div>
                 
-                <div class="ts-progress has-top-spaced-large">
-                    <div class="bar" id="import-progress-bar"></div>
-                    <div class="text" id="import-progress-text">準備中...</div>
-                </div>
-                
-                <div class="ts-space is-large"></div>
-                <div class="ts-text is-description">
-                    視檔案大小與複雜度，匯入可能需要幾分鐘時間。請勿關閉視窗或重新整理頁面。
-                </div>
-            </div>
-            
-            <!-- 步驟3: 衝突解決區塊 -->
-            <div id="import-conflict-container" style="display:none;">
-                <div class="ts-notice is-warning">
-                    <div class="content">
-                        <div class="header">資料衝突</div>
-                        <div class="description">部分資料與現有資料衝突，請選擇處理方式</div>
+                <!-- 步驟2: 進度條區塊 -->
+                <div id="import-progress-container" style="display:none;">
+                    <div class="ts-notice is-primary">
+                        <div class="content">
+                            <div class="header">匯入處理中</div>
+                            <div class="description">正在處理您的資料，請耐心等待...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ts-progress has-top-spaced-large">
+                        <div class="bar" id="import-progress-bar"></div>
+                        <div class="text" id="import-progress-text">準備中...</div>
+                    </div>
+                    
+                    <div class="ts-space is-large"></div>
+                    <div class="ts-text is-description">
+                        視檔案大小與複雜度，匯入可能需要幾分鐘時間。請勿關閉視窗或重新整理頁面。
                     </div>
                 </div>
                 
-                <div class="ts-space"></div>
-                <div id="conflict-records-container">
-                    <!-- 衝突記錄將由JS動態填入 -->
+                <!-- 步驟3: 衝突解決區塊 -->
+                <div id="import-conflict-container" style="display:none;">
+                    <div class="ts-notice is-warning">
+                        <div class="content">
+                            <div class="header">資料衝突</div>
+                            <div class="description">部分資料與現有資料衝突，請選擇處理方式</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ts-space"></div>
+                    <div id="conflict-records-container">
+                        <!-- 衝突記錄將由JS動態填入 -->
+                    </div>
                 </div>
-            </div>
-            
-            <!-- 步驟4: 結果區塊 -->
-            <div id="import-result-container" style="display:none;">
-                <!-- 結果將由JS動態填入 -->
+                
+                <!-- 步驟4: 結果區塊 -->
+                <div id="import-result-container" style="display:none;">
+                    <!-- 結果將由JS動態填入 -->
+                </div>
             </div>
         </div>
     </div>
-</div>
+    
     <!-- 通知元件 -->
     <div class="ts-snackbar" id="notification-snackbar">
         <div class="content"></div>
@@ -293,4 +236,5 @@
 
 {% block scripts %}
 <script src="{% static 'js/waste_transport/manifest.js' %}"></script>
+<script src="{% static 'js/waste_transport/filter_popup.js' %}"></script>
 {% endblock %}

@@ -1,0 +1,143 @@
+/* 篩選彈出視窗樣式 */
+.filter-popup-container {
+    display: none;
+    position: absolute;
+    top: 45px;
+    right: 0;
+    width: 650px;
+    max-width: 95vw;
+    background-color: var(--ts-white);
+    border-radius: 5px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+    border: 1px solid var(--ts-gray-300);
+}
+
+.filter-popup-content {
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.filter-popup-container .ts-header {
+    font-size: 1.3rem;
+    margin-bottom: 0.7rem;
+    color: var(--ts-gray-800);
+    font-weight: bold;
+}
+
+.filter-popup-container .ts-text.is-label {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--ts-gray-700);
+}
+
+.filter-popup-container .ts-input,
+.filter-popup-container .ts-select {
+    width: 100%;
+    background-color: var(--ts-white);
+    border: 1px solid var(--ts-gray-300);
+    border-radius: 4px;
+    font-size: 15px;
+    padding: 8px 12px;
+    height: auto;
+}
+
+.filter-popup-container .ts-input:focus,
+.filter-popup-container .ts-select:focus {
+    border-color: var(--ts-primary-500);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.filter-popup-container .ts-segment {
+    padding: 15px;
+    border: 1px solid var(--ts-gray-300);
+    border-radius: 4px;
+    background-color: var(--ts-white);
+}
+
+.filter-popup-container .ts-radio {
+    margin-bottom: 0;
+    padding: 5px 0;
+}
+
+.filter-popup-container .ts-radio:last-child {
+    margin-bottom: 0;
+}
+
+.filter-popup-container .ts-button {
+    padding: 10px 15px;
+    font-size: 15px;
+    height: 42px;
+}
+
+.filter-toggle-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* 確保按鈕樣式一致 */
+#filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+#filter-toggle.is-active {
+    background-color: var(--ts-primary-500);
+    color: white;
+    border: none;
+}
+
+/* 動畫效果 */
+.filter-popup-container.show {
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 確保間距合理 */
+.filter-popup-container .ts-grid.is-relaxed {
+    margin: -0.75rem;
+}
+
+.filter-popup-container .ts-grid.is-relaxed > .column {
+    padding: 0.75rem;
+}
+
+.filter-popup-container .ts-grid.is-relaxed.has-top-spaced {
+    margin-top: 0.25rem;
+}
+
+.filter-popup-container .ts-divider.has-top-spaced-large {
+    margin-top: 1.5rem;
+}
+
+/* 響應式調整 */
+@media screen and (max-width: 768px) {
+    .filter-popup-container {
+        width: calc(100% - 40px);
+        left: auto;
+        right: 20px;
+    }
+    
+    .filter-popup-container .ts-grid .column {
+        width: 100% !important;
+    }
+    
+    .filter-popup-container .ts-button {
+        margin-top: 5px;
+    }
+}

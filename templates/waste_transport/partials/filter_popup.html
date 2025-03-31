@@ -1,0 +1,109 @@
+{% comment %}
+    廢棄物聯單管理系統 - 篩選彈出視窗模板
+    此模板包含篩選聯單的浮動彈出視窗
+{% endcomment %}
+
+<!-- 浮動式篩選視窗 -->
+<div id="filter-popup" class="filter-popup-container">
+    <div class="filter-popup-content">
+        <div class="ts-content">
+            <form method="get" id="manifest-filter-form" class="has-top-spaced">
+                <!-- 聯單類型獨立一列 -->
+                <div class="ts-grid is-relaxed">
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">聯單類型</div>
+                        {{ form.manifest_type }}
+                    </div>
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">確認狀態</div>
+                        {{ form.confirmation_status }}
+                    </div>
+                </div>
+                
+                <!-- 一般欄位 -->
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">聯單編號</div>
+                        {{ form.manifest_id }}
+                    </div>
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">事業機構名稱</div>
+                        {{ form.company_name }}
+                    </div>
+                </div>
+                
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">廢棄物代碼</div>
+                        {{ form.waste_code }}
+                    </div>
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">廢棄物名稱</div>
+                        {{ form.waste_name }}
+                    </div>
+                </div>
+                
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">申報重量高於 (kg)</div>
+                        {{ form.reported_weight_above }}
+                    </div>
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">申報重量低於 (kg)</div>
+                        {{ form.reported_weight_below }}
+                    </div>
+                </div>
+                
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">申報日期從</div>
+                        {{ form.report_date_from }}
+                    </div>
+                    <div class="column is-6-wide">
+                        <div class="ts-text is-label">申報日期至</div>
+                        {{ form.report_date_to }}
+                    </div>
+                </div>
+                
+                <!-- 篩選條件模式獨立一列 -->
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-12-wide">
+                        <div class="ts-text is-label">篩選條件模式</div>
+                        <div class="ts-segment">
+                            <div class="ts-grid">
+                                <div class="column is-6-wide">
+                                    <div class="ts-radio is-primary">
+                                        <input id="filter-all" type="radio" name="filterMode" value="all" checked>
+                                        <label for="filter-all">所有條件皆滿足</label>
+                                    </div>
+                                </div>
+                                <div class="column is-6-wide">
+                                    <div class="ts-radio is-primary">
+                                        <input id="filter-any" type="radio" name="filterMode" value="any">
+                                        <label for="filter-any">其中一個滿足即可</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ts-divider has-top-spaced-large"></div>
+                
+                <!-- 按鈕區塊 -->
+                <div class="ts-grid is-relaxed has-top-spaced">
+                    <div class="column is-6-wide">
+                        <button type="button" class="ts-button is-fluid is-outlined is-start-icon" id="clearFilterBtn">
+                            <span class="ts-icon is-filter-circle-xmark-icon"></span> 清空條件
+                        </button>
+                    </div>
+                    <div class="column is-6-wide">
+                        <button type="submit" class="ts-button is-fluid is-primary is-start-icon">
+                            <span class="ts-icon is-search-icon"></span> 搜尋
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
